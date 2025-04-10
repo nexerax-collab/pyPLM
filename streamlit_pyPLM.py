@@ -9,128 +9,132 @@ from pyPLM import (
 
 st.set_page_config(page_title="PyPLM", layout="wide")
 
-# Authentication + init logic (same as before)...
-# [KEEP YOUR USER LOGIN CODE FROM ABOVE UNCHANGED HERE]
+# Initialize DB and BOM
+create_database()
+bom = BOM()
 
-# --- Sidebar Navigation ---
+# Load items into memory
+with get_db_connection() as conn:
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM items")
+    for row in cursor.fetchall():
+        item = Item()
+        item.item_number = row[0]
+        item.revision = row[1]
+        if row[2]:
+            upper = bom.get_item(row[2])
+            if upper:
+                item.upper_level = upper
+        bom.add_item(item)
+
+# User login/auth (replace with your full login logic)
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = True
+    st.session_state.role = 'admin'  # DEV OVERRIDE
+
+# Sidebar Main Menu
 main_menu = st.sidebar.selectbox("Main Menu", [
     "Item Management", "Change Management", "Document Management", "BOM Management"] +
     (["User Management", "Purge Database"] if st.session_state.role == "admin" else [])
 )
 
-# --- Item Management ---
+# ------------------------ ITEM MANAGEMENT ------------------------
 if main_menu == "Item Management":
-    item_action = st.radio("Item Options", ["Create Item", "Link Items", "Show BOM"])
+    action = st.radio("Item Options", ["Create Item", "Link Items", "Show BOM"])
 
-    if item_action == "Create Item":
+    if action == "Create Item":
         if st.button("Create New Item"):
-            new_item = Item()
-            bom.add_item(new_item)
-            add_item_to_db(new_item)
-            st.success(f"Created Item {new_item.item_number} (Rev {new_item.revision})")
+            item = Item()
+            bom.add_item(item)
+            add_item_to_db(item)
+            st.success(f"Created Item {item.item_number} (Rev {item.revision})")
 
-    elif item_action == "Link Items":
-        parent = st.text_input("Parent Item Number")
-        child = st.text_input("Child Item Number")
+    elif action == "Link Items":
+        p = st.text_input("Parent Item")
+        c = st.text_input("Child Item")
         if st.button("Link"):
-            parent_item = bom.get_item(parent)
-            child_item = bom.get_item(child)
-            if parent_item and child_item:
-                parent_item.add_lower_level_item(child_item)
-                st.success(f"Linked {child} as child of {parent}")
+            parent = bom.get_item(p)
+            child = bom.get_item(c)
+            if parent and child:
+                parent.add_lower_level_item(child)
+                st.success(f"Linked {c} under {p}")
             else:
                 st.error("One or both items not found")
 
-    elif item_action == "Show BOM":
-        item_number = st.text_input("Enter Item Number to Show BOM")
-        item = bom.get_item(item_number)
+    elif action == "Show BOM":
+        target = st.text_input("Item to show BOM")
+        item = bom.get_item(target)
         if item:
-            st.subheader(f"BOM for {item.item_number} (Rev {item.revision})")
-            if item.bom.items:
-                for i_num in item.bom.items:
-                    st.text(f"- {i_num}")
-            else:
-                st.info("No items in BOM.")
+            st.write(f"BOM for {item.item_number}")
+            for child in item.lower_level:
+                st.markdown(f"- {child.item_number} (Rev {child.revision})")
         else:
             st.warning("Item not found")
 
-# --- Change Management ---
+# ------------------------ CHANGE MANAGEMENT ------------------------
 elif main_menu == "Change Management":
-    cr_action = st.radio("Change Options", ["Create CR", "Update CR Status", "View by Item", "View All"])
+    act = st.radio("Change Options", ["Create CR", "Update Status", "Show by Item", "Show All"])
 
-    if cr_action == "Create CR":
+    if act == "Create CR":
         item_number = st.text_input("Item Number")
         item = bom.get_item(item_number)
         if item:
-            reason = st.selectbox("Reason", ["A - Client Request", "B - Internal Request", "C - Bug Fix", "D - Admin Fix"])
-            cost = st.text_input("Cost Impact (in k€)", "0")
-            cr = item.create_change_request(reason[0], cost, timeline_impact="< 2 weeks")
+            reason = st.selectbox("Reason", ["A", "B", "C", "D"])
+            cost = st.text_input("Cost (€k)", "0")
+            cr = item.create_change_request(reason, cost, timeline_impact="< 2 weeks")
             add_change_request_to_db(cr)
-            st.success(f"Created CR#{cr.change_request_number} for {item.item_number}")
+            st.success(f"CR#{cr.change_request_number} created")
+        else:
+            st.warning("Item not found")
 
-    elif cr_action == "Update CR Status":
-        cr_num = st.text_input("Enter CR Number")
-        new_status = st.selectbox("New Status", ["Created", "In Progress", "Accepted", "Declined"])
-        cursor = get_db_connection().cursor()
-        cursor.execute("UPDATE change_requests SET status = ? WHERE change_request_number = ?", (new_status, cr_num))
-        get_db_connection().commit()
-        st.success(f"CR#{cr_num} updated to {new_status}")
+    elif act == "Update Status":
+        cr_num = st.text_input("CR Number")
+        new = st.selectbox("New Status", ["Created", "In Progress", "Accepted", "Declined"])
+        conn = get_db_connection()
+        conn.execute("UPDATE change_requests SET status = ? WHERE change_request_number = ?", (new, cr_num))
+        conn.commit()
+        st.success(f"CR#{cr_num} updated")
 
-    elif cr_action == "View by Item":
-        item_number = st.text_input("Enter Item Number")
-        cursor = get_db_connection().cursor()
-        cursor.execute("SELECT * FROM change_requests WHERE item_number = ?", (item_number,))
-        for row in cursor.fetchall():
-            st.markdown(f"**CR#{row[0]}** — Reason: {row[2]} | Cost: {row[3]} | Status: {row[5]}")
+    elif act == "Show by Item":
+        item_number = st.text_input("Item Number")
+        conn = get_db_connection()
+        rows = conn.execute("SELECT * FROM change_requests WHERE item_number = ?", (item_number,))
+        for row in rows.fetchall():
+            st.markdown(f"**CR#{row[0]}** — Reason: {row[2]} | Status: {row[5]}")
 
-    elif cr_action == "View All":
-        cursor = get_db_connection().cursor()
-        cursor.execute("SELECT * FROM change_requests")
-        for row in cursor.fetchall():
-            st.markdown(f"**CR#{row[0]}** — Item: {row[1]} | Reason: {row[2]} | Cost: {row[3]} | Status: {row[5]}")
+    elif act == "Show All":
+        rows = get_db_connection().execute("SELECT * FROM change_requests")
+        for row in rows.fetchall():
+            st.markdown(f"**CR#{row[0]}** — Item: {row[1]} | Reason: {row[2]} | Status: {row[5]}")
 
-# --- Document Management ---
+# ------------------------ DOCUMENT MANAGEMENT ------------------------
 elif main_menu == "Document Management":
-    doc_action = st.radio("Document Options", ["Show Document", "Attach to Item (todo)", "Attach to CR (todo)"])
-
-    if doc_action == "Show Document":
-        doc_number = st.text_input("Enter Document Number")
-        doc = get_document_from_db(doc_number)
-        if doc:
-            st.markdown(f"**Document {doc.document_number}** (v{doc.version})")
-            st.code(doc.content[:1000])
+    doc = st.radio("Doc Options", ["Show Doc"])
+    if doc == "Show Doc":
+        num = st.text_input("Document Number")
+        d = get_document_from_db(num)
+        if d:
+            st.code(d.content[:1000])
         else:
             st.warning("Not found")
 
-# --- BOM Management ---
+# ------------------------ BOM MANAGEMENT ------------------------
 elif main_menu == "BOM Management":
-    st.subheader("(To be implemented)")
+    st.subheader("Coming Soon: Remove item, change quantity, BOM versioning")
 
-# --- Admin Tools ---
-elif main_menu == "Purge Database" and st.session_state.role == "admin":
-    st.header("⚠️ Purge Entire Database")
-    if st.checkbox("I understand this will permanently delete all records."):
-        if st.button("Delete ALL Data"):
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM items")
-            cursor.execute("DELETE FROM change_requests")
-            cursor.execute("DELETE FROM documents")
-            conn.commit()
-            st.success("Database purged")
+# ------------------------ ADMIN: PURGE ------------------------
+elif main_menu == "Purge Database":
+    if st.session_state.role == "admin":
+        if st.checkbox("Yes, I understand"):
+            if st.button("Purge"):
+                conn = get_db_connection()
+                for table in ["items", "change_requests", "documents"]:
+                    conn.execute(f"DELETE FROM {table}")
+                conn.commit()
+                st.success("Database purged.")
 
-elif main_menu == "User Management" and st.session_state.role == "admin":
-    st.header("Create New User")
-    u = st.text_input("Username")
-    p = st.text_input("Password", type="password")
-    r = st.selectbox("Role", ["admin", "user"])
-    if st.button("Create"):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-                       (u, hash_password(p), r))
-        conn.commit()
-        st.success("User created")
+# ------------------------ ADMIN: USER MANAGEMENT ------------------------
+elif main_menu == "User Management":
+    st.subheader("Add new user (not hooked up in this UI yet)")
 
-st.markdown("---")
 st.caption("Built with ❤️ for developers and config managers")
