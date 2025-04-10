@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 import os
+
+from PIL import Image
+logo = Image.open("A_2D_digital_graphic_displays_the_logo_for_"PyPLM".png")
+st.image(logo, use_column_width=False, width=200)
+
 from pyPLM import (
     create_database, get_db_connection, Item, BOM, ChangeRequest,
     add_item_to_db, add_change_request_to_db, get_document_from_db,
@@ -14,7 +19,7 @@ st.set_page_config(page_title="PyPLM", layout="centered", initial_sidebar_state=
 def apply_custom_styles(dark=False):
     primary = "#e8eaed" if not dark else "#202124"
     secondary = "#f1f3f4" if not dark else "#303134"
-    text = "#202124" if not dark else "#e8eaed"
+    text = "#202124" if not dark else "#ffffff"
 
     st.markdown(f"""
         <style>
