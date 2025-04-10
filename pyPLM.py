@@ -447,8 +447,7 @@ def add_document_to_db(document):
         print(f"Error adding document to database. Check the log file for details.")
 
 def attach_document_to_item(item):
-        # Replace with file selection logic for local environment
-        uploaded = {}  # Placeholder
+        uploaded = files.upload()
         for fn in uploaded.keys():
             file_path = fn  # Get the uploaded file path
             document_type = input("Enter document type: ")
@@ -464,8 +463,7 @@ def attach_document_to_item(item):
                 print(f"An error occurred: {e}")
 
 def attach_document_to_item(change_request):
-        # Replace with file selection logic for local environment
-        uploaded = {}  # Placeholder
+        uploaded = files.upload()
         for fn in uploaded.keys():
             file_path = fn  # Get the uploaded file path
             document_type = input("Enter document type: ")
