@@ -8,7 +8,7 @@ Modern AI lets anyone turn their ideas into real tools.
 
 My goal is to:
 
-🌍 Make useful systems freely available
+🌍 Make PyPLM freely available
 
 🤝 Encourage community contribution
 
