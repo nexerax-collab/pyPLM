@@ -4,7 +4,9 @@ PyPLM is a lightweight Product Lifecycle Management (PLM) tool designed and buil
 I created this app using Google Colab, ChatGPT, and Streamlit, combining background knowledge from engineering and config management with the power of new AI tools. Despite having limited coding experience, this project shows what's now possible when domain expertise meets accessible AI.
 
 🚀 Why This Exists
-Modern AI lets anyone turn their ideas into real tools. My goal is to:
+Modern AI lets anyone turn their ideas into real tools. 
+
+My goal is to:
 
 🌍 Make useful systems freely available
 
