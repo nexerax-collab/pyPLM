@@ -1,6 +1,6 @@
 import streamlit as st
 from pyngrok import ngrok
-from google.colab import files
+
 import streamlit as st
 import re
 import sqlite3
@@ -448,7 +448,7 @@ def add_document_to_db(document):
         print(f"Error adding document to database. Check the log file for details.")
 
 def attach_document_to_item(item):
-        uploaded = files.upload()
+        uploaded = # files.upload() removed for local use
         for fn in uploaded.keys():
             file_path = fn  # Get the uploaded file path
             document_type = input("Enter document type: ")
@@ -464,7 +464,7 @@ def attach_document_to_item(item):
                 print(f"An error occurred: {e}")
 
 def attach_document_to_item(change_request):
-        uploaded = files.upload()
+        uploaded = # files.upload() removed for local use
         for fn in uploaded.keys():
             file_path = fn  # Get the uploaded file path
             document_type = input("Enter document type: ")
