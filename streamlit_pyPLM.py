@@ -23,17 +23,34 @@ if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
     st.session_state.role = None
 
-# Initialize user table if not exists
+# Initialize user table and other tables if not exists
 def init_user_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+    cursor.execute("""CREATE TABLE IF NOT EXISTS users (
         username TEXT PRIMARY KEY,
         password TEXT,
         role TEXT
-    )''')
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS items (
+        item_number TEXT PRIMARY KEY,
+        revision TEXT,
+        upper_level TEXT
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS change_requests (
+        change_request_number TEXT PRIMARY KEY,
+        item_number TEXT,
+        reason TEXT,
+        cost_impact TEXT,
+        timeline_impact TEXT,
+        status TEXT
+    )""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS documents (
+        document_number TEXT PRIMARY KEY,
+        version TEXT,
+        content TEXT
+    )""")
     conn.commit()
-    # Add default admin user
     cursor.execute("SELECT * FROM users WHERE username='admin'")
     if not cursor.fetchone():
         cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
