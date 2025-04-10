@@ -7,181 +7,42 @@ from pyPLM import (
     add_document_to_db
 )
 
-# Configure the page
-st.set_page_config(page_title="PyPLM", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="PyPLM", layout="wide")
 
-# Function to hash passwords
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+# Authentication + init logic (same as before)...
+# [KEEP YOUR USER LOGIN CODE FROM ABOVE UNCHANGED HERE]
 
-# Function to verify passwords
-def verify_password(input_password, stored_hash):
-    return hash_password(input_password) == stored_hash
+# --- Sidebar Navigation ---
+main_menu = st.sidebar.selectbox("Main Menu", [
+    "Item Management", "Change Management", "Document Management", "BOM Management"] +
+    (["User Management", "Purge Database"] if st.session_state.role == "admin" else [])
+)
 
-# User session and authentication
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-    st.session_state.role = None
+# --- Item Management ---
+if main_menu == "Item Management":
+    item_action = st.radio("Item Options", ["Create Item", "Link Items", "Show BOM"])
 
-# Initialize user table and other tables if not exists
-def init_user_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password TEXT,
-        role TEXT
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS items (
-        item_number TEXT PRIMARY KEY,
-        revision TEXT,
-        upper_level TEXT
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS change_requests (
-        change_request_number TEXT PRIMARY KEY,
-        item_number TEXT,
-        reason TEXT,
-        cost_impact TEXT,
-        timeline_impact TEXT,
-        status TEXT
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS documents (
-        document_number TEXT PRIMARY KEY,
-        version TEXT,
-        content TEXT
-    )""")
-    conn.commit()
-    cursor.execute("SELECT * FROM users WHERE username='admin'")
-    if not cursor.fetchone():
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-                       ('admin', hash_password('admin'), 'admin'))
-        conn.commit()
+    if item_action == "Create Item":
+        if st.button("Create New Item"):
+            new_item = Item()
+            bom.add_item(new_item)
+            add_item_to_db(new_item)
+            st.success(f"Created Item {new_item.item_number} (Rev {new_item.revision})")
 
-init_user_db()
+    elif item_action == "Link Items":
+        parent = st.text_input("Parent Item Number")
+        child = st.text_input("Child Item Number")
+        if st.button("Link"):
+            parent_item = bom.get_item(parent)
+            child_item = bom.get_item(child)
+            if parent_item and child_item:
+                parent_item.add_lower_level_item(child_item)
+                st.success(f"Linked {child} as child of {parent}")
+            else:
+                st.error("One or both items not found")
 
-# Authentication form
-if not st.session_state.authenticated:
-    with st.form("Login"):
-        st.subheader("🔐 Login")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        login = st.form_submit_button("Login")
-
-    if login:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT password, role FROM users WHERE username=?", (username,))
-        row = cursor.fetchone()
-        if row and verify_password(password, row[0]):
-            st.session_state.authenticated = True
-            st.session_state.role = row[1]
-            st.success("Logged in successfully!")
-            st.rerun()
-        else:
-            st.error("Invalid credentials")
-    st.stop()
-
-# Sidebar navigation
-menu = ["Create Item", "Manage BOM", "Create Change Request", "View Change Requests", "View Documents"]
-if st.session_state.role == "admin":
-    menu += ["User Management", "Purge Database"]
-
-menu_choice = st.sidebar.radio("🚀 Navigate", menu)
-
-# Admin: Purge Database
-if menu_choice == "Purge Database" and st.session_state.role == "admin":
-    st.header("⚠️ Purge Entire Database")
-    confirm = st.checkbox("I understand this will permanently delete all records.")
-    if confirm and st.button("Delete ALL Data"):
-        conn = get_db_connection()
-        # Reset the item counter if using Item.item_count
-        try:
-            Item.item_count = 0
-        except AttributeError:
-            pass
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM items")
-        cursor.execute("DELETE FROM change_requests")
-        cursor.execute("DELETE FROM documents")
-        conn.commit()
-        st.success("Database purged successfully.")
-
-# Admin: User Management
-elif menu_choice == "User Management" and st.session_state.role == "admin":
-    st.header("👥 User Management")
-    new_user = st.text_input("New Username")
-    new_pass = st.text_input("New Password", type="password")
-    new_role = st.selectbox("Role", ["user", "admin"])
-    if st.button("Create User"):
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-                           (new_user, hash_password(new_pass), new_role))
-            conn.commit()
-            st.success(f"User '{new_user}' created.")
-        except sqlite3.IntegrityError:
-            st.error("User already exists.")
-
-# Code-based logo header
-st.markdown("""
-    <h1 style='font-family: Google Sans, sans-serif; color: #34a853; font-size: 2.2rem; margin-bottom: 0;'>PyPLM</h1>
-    <p style='font-family: Google Sans, sans-serif; color: #5f6368; font-size: 1.1rem; margin-top: 0;'>Product Lifecycle Management</p>
-""", unsafe_allow_html=True)
-
-# CSS styling for Google-like theme
-st.markdown("""
-    <style>
-    html, body, [class*='css'] {
-        font-family: 'Google Sans', sans-serif;
-        background-color: #f8f9fa;
-        color: #202124;
-    }
-    .block-container { padding-top: 2rem; padding-bottom: 2rem; max-width: 900px; }
-    .stButton>button {
-        background-color: #34a853;
-        color: white;
-        font-size: 1rem;
-        border-radius: 1.5rem;
-        padding: 0.4rem 1.5rem;
-        margin-bottom: 10px;
-    }
-    .stButton>button:hover { background-color: #0f9d58; }
-    .stSidebar nav { font-size: 1rem; }
-    </style>
-""", unsafe_allow_html=True)
-
-# Initialize database
-create_database()
-bom = BOM()
-
-# Load existing items
-with get_db_connection() as conn:
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM items")
-    for row in cursor.fetchall():
-        item = Item()
-        item.item_number = row[0]
-        item.revision = row[1]
-        if row[2]:
-            upper = bom.get_item(row[2])
-            if upper:
-                item.upper_level = upper
-        bom.add_item(item)
-
-# Functional sections for PLM
-if menu_choice == "Create Item":
-    st.header("Create New Item")
-    if st.button("Create New Item Now"):
-        new_item = Item()
-        bom.add_item(new_item)
-        add_item_to_db(new_item)
-        st.success(f"Created Item {new_item.item_number} (Rev {new_item.revision})")
-
-elif menu_choice == "Manage BOM":
-    st.header("BOM Management")
-    item_number = st.text_input("Enter Item Number to Show BOM")
-    if item_number:
+    elif item_action == "Show BOM":
+        item_number = st.text_input("Enter Item Number to Show BOM")
         item = bom.get_item(item_number)
         if item:
             st.subheader(f"BOM for {item.item_number} (Rev {item.revision})")
@@ -191,44 +52,85 @@ elif menu_choice == "Manage BOM":
             else:
                 st.info("No items in BOM.")
         else:
-            st.error("Item not found.")
+            st.warning("Item not found")
 
-elif menu_choice == "Create Change Request":
-    st.header("Create Change Request")
-    item_number = st.text_input("Enter Item Number")
-    if item_number:
+# --- Change Management ---
+elif main_menu == "Change Management":
+    cr_action = st.radio("Change Options", ["Create CR", "Update CR Status", "View by Item", "View All"])
+
+    if cr_action == "Create CR":
+        item_number = st.text_input("Item Number")
         item = bom.get_item(item_number)
         if item:
             reason = st.selectbox("Reason", ["A - Client Request", "B - Internal Request", "C - Bug Fix", "D - Admin Fix"])
-            cost_impact = st.text_input("Cost Impact (in k€)", "0")
-            cr = item.create_change_request(reason[0], cost_impact, timeline_impact="< 2 weeks")
+            cost = st.text_input("Cost Impact (in k€)", "0")
+            cr = item.create_change_request(reason[0], cost, timeline_impact="< 2 weeks")
             add_change_request_to_db(cr)
-            st.success(f"Change Request {cr.change_request_number} created.")
-        else:
-            st.error("Item not found.")
+            st.success(f"Created CR#{cr.change_request_number} for {item.item_number}")
 
-elif menu_choice == "View Change Requests":
-    st.header("Change Requests")
-    status_filter = st.selectbox("Filter by status", ["All", "Created", "In Progress", "Accepted", "Declined"])
-    cursor = get_db_connection().cursor()
-    query = "SELECT * FROM change_requests"
-    if status_filter != "All":
-        query += f" WHERE status = '{status_filter}'"
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    for row in rows:
-        st.markdown(f"**CR#{row[0]}** — Item: `{row[1]}` | Reason: {row[2]} | Cost: {row[3]} | Timeline: {row[4]} | Status: `{row[5]}`")
+    elif cr_action == "Update CR Status":
+        cr_num = st.text_input("Enter CR Number")
+        new_status = st.selectbox("New Status", ["Created", "In Progress", "Accepted", "Declined"])
+        cursor = get_db_connection().cursor()
+        cursor.execute("UPDATE change_requests SET status = ? WHERE change_request_number = ?", (new_status, cr_num))
+        get_db_connection().commit()
+        st.success(f"CR#{cr_num} updated to {new_status}")
 
-elif menu_choice == "View Documents":
-    st.header("Documents")
-    doc_number = st.text_input("Enter Document Number")
-    if doc_number:
+    elif cr_action == "View by Item":
+        item_number = st.text_input("Enter Item Number")
+        cursor = get_db_connection().cursor()
+        cursor.execute("SELECT * FROM change_requests WHERE item_number = ?", (item_number,))
+        for row in cursor.fetchall():
+            st.markdown(f"**CR#{row[0]}** — Reason: {row[2]} | Cost: {row[3]} | Status: {row[5]}")
+
+    elif cr_action == "View All":
+        cursor = get_db_connection().cursor()
+        cursor.execute("SELECT * FROM change_requests")
+        for row in cursor.fetchall():
+            st.markdown(f"**CR#{row[0]}** — Item: {row[1]} | Reason: {row[2]} | Cost: {row[3]} | Status: {row[5]}")
+
+# --- Document Management ---
+elif main_menu == "Document Management":
+    doc_action = st.radio("Document Options", ["Show Document", "Attach to Item (todo)", "Attach to CR (todo)"])
+
+    if doc_action == "Show Document":
+        doc_number = st.text_input("Enter Document Number")
         doc = get_document_from_db(doc_number)
         if doc:
             st.markdown(f"**Document {doc.document_number}** (v{doc.version})")
             st.code(doc.content[:1000])
         else:
-            st.warning("Document not found.")
+            st.warning("Not found")
+
+# --- BOM Management ---
+elif main_menu == "BOM Management":
+    st.subheader("(To be implemented)")
+
+# --- Admin Tools ---
+elif main_menu == "Purge Database" and st.session_state.role == "admin":
+    st.header("⚠️ Purge Entire Database")
+    if st.checkbox("I understand this will permanently delete all records."):
+        if st.button("Delete ALL Data"):
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM items")
+            cursor.execute("DELETE FROM change_requests")
+            cursor.execute("DELETE FROM documents")
+            conn.commit()
+            st.success("Database purged")
+
+elif main_menu == "User Management" and st.session_state.role == "admin":
+    st.header("Create New User")
+    u = st.text_input("Username")
+    p = st.text_input("Password", type="password")
+    r = st.selectbox("Role", ["admin", "user"])
+    if st.button("Create"):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                       (u, hash_password(p), r))
+        conn.commit()
+        st.success("User created")
 
 st.markdown("---")
 st.caption("Built with ❤️ for developers and config managers")
