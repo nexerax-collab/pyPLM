@@ -94,6 +94,11 @@ if menu_choice == "Purge Database" and st.session_state.role == "admin":
     confirm = st.checkbox("I understand this will permanently delete all records.")
     if confirm and st.button("Delete ALL Data"):
         conn = get_db_connection()
+        # Reset the item counter if using Item.item_count
+        try:
+            Item.item_count = 0
+        except AttributeError:
+            pass
         cursor = conn.cursor()
         cursor.execute("DELETE FROM items")
         cursor.execute("DELETE FROM change_requests")
