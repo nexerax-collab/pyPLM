@@ -1,6 +1,3 @@
-!pip install PyPDF2 # Install PyPDF2 using pip
-!pip install streamlit
-!pip install pyngrok
 import streamlit as st
 from pyngrok import ngrok
 from google.colab import files
