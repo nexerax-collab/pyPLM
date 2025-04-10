@@ -65,16 +65,13 @@ class Document:
                 page = pdf_reader.pages[page_num]
                 self.content += page.extract_text()
 
+
 class Item:
     def __init__(self):
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT item_number FROM items ORDER BY item_number DESC LIMIT 1")
-        last = cursor.fetchone()
-        if last:
-            last_number = int(last[0][1:])  # Skip the 'P'
-        else:
-            last_number = 0
+        cursor.execute("SELECT MAX(CAST(SUBSTR(item_number, 2) AS INTEGER)) FROM items")
+        last_number = cursor.fetchone()[0] or 0
         next_number = last_number + 1
         self.item_number = f"P{next_number:04}"
         self.revision = "A"
