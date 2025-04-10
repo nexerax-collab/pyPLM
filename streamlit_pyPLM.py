@@ -167,10 +167,11 @@ with get_db_connection() as conn:
 # Functional sections for PLM
 if menu_choice == "Create Item":
     st.header("Create New Item")
-    new_item = Item()
-    bom.add_item(new_item)
-    add_item_to_db(new_item)
-    st.success(f"Created Item {new_item.item_number} (Rev {new_item.revision})")
+    if st.button("Create New Item Now"):
+        new_item = Item()
+        bom.add_item(new_item)
+        add_item_to_db(new_item)
+        st.success(f"Created Item {new_item.item_number} (Rev {new_item.revision})")
 
 elif menu_choice == "Manage BOM":
     st.header("BOM Management")
