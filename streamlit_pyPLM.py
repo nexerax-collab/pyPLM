@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 from PIL import Image
-logo = Image.open("A_2D_digital_graphic_displays_the_logo_for_"PyPLM".png")
+logo = Image.open("A_2D_digital_graphic_displays_the_logo_for_'PyPLM'.png")
 st.image(logo, use_column_width=False, width=200)
 
 from pyPLM import (
