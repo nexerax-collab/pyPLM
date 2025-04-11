@@ -10,7 +10,7 @@ st.set_page_config(page_title="PyPLM", layout="wide")
 
 # Branding/Header
 st.markdown("""
-<h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>Pi PLM</h1>
+<h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>PyPLM</h1>
 <p style='color:gray;'>Your lightweight PLM system</p>
 """, unsafe_allow_html=True)
 
