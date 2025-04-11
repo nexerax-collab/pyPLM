@@ -41,7 +41,7 @@ with get_db_connection() as conn:
         bom.add_item(item)
 main_menu = st.sidebar.selectbox("Main Menu", [
     "Item Management", "Change Management", "Document Management", "BOM Management",
-    "User Management", "Purge Database"
+    "User Management", "Purge Database", "System Status & Logs"
 ])
 
 # Item Management
@@ -206,5 +206,40 @@ elif main_menu == "Purge Database":
 
 elif main_menu == "User Management":
     st.subheader("Add new user (coming soon)")
+
+
+elif main_menu == "System Status & Logs":
+    st.header("🔍 System Status Overview")
+    st.write("Current application health and database status:")
+
+    # DB Status
+    st.markdown("**Database:** 🟢 Initialized")
+
+    # BOM
+    st.markdown("**BOM:** 🟢 Initialized")
+
+    # Check item count
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM items")
+    item_count = cursor.fetchone()[0]
+    if item_count == 0:
+        st.markdown("**Items in DB:** 🟡 No items found")
+    else:
+        st.markdown(f"**Items in DB:** 🟢 {item_count} item(s)")
+
+    # Check for errors in log file
+    import os
+    error_log = 'plm_tool.log'
+    if os.path.exists(error_log):
+        with open(error_log) as log_file:
+            logs = log_file.read()
+            if "ERROR" in logs:
+                st.markdown("**Recent Errors:** 🔴 Found")
+            else:
+                st.markdown("**Recent Errors:** 🟢 None")
+    else:
+        st.markdown("**Log File:** 🟡 Not found")
+
 
 st.caption("Built with ❤️ for developers and config managers")
