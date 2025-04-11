@@ -29,8 +29,7 @@ class Item:
         last_number = cursor.fetchone()[0] or 0
         next_number = last_number + 1
         self.item_number = f"P{next_number:04}"
-        self.revision = "A"
-        self.upper_level = None
+                self.upper_level = None
         self.lower_level = []
         self.bom = BOM()
         self.bom.add_item(self)  # Ensure root item is in BOM
@@ -94,7 +93,7 @@ def create_database():
 def add_item_to_db(item):
     conn = get_db_connection()
     conn.execute("INSERT INTO items (item_number, revision, upper_level) VALUES (?, ?, ?)",
-                 (item.item_number, item.revision, item.upper_level.item_number if item.upper_level else None))
+                 (item.item_number,  item.upper_level.item_number if item.upper_level else None))
     conn.commit()
 
 def add_change_request_to_db(cr):
