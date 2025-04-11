@@ -67,7 +67,7 @@ if main_menu == "Item Management":
         item = bom.get_item(target)
         if item:
             st.write(f"BOM for {item.item_number}")
-            for child in item.lower_level:
+            for child in item.bom.items.values():
                 st.markdown(f"- {child.item_number} (Rev {child.revision})")
         else:
             st.warning("Item not found")
@@ -82,7 +82,7 @@ elif main_menu == "Change Management":
         if item:
             reason = st.selectbox("Reason", ["", "A", "B", "C", "D"])
             cost = st.text_input("Cost (€k)", "0")
-            if reason and cost:
+            if reason and cost.replace(".", "", 1).isdigit():
                 cr = item.create_change_request(reason, cost, timeline_impact="< 2 weeks")
                 add_change_request_to_db(cr)
                 st.success(f"CR#{cr.change_request_number} created")
@@ -127,7 +127,7 @@ elif main_menu == "BOM Management":
         item = bom.get_item(item_number)
         if item:
             st.write(f"BOM for {item.item_number}")
-            for child in item.lower_level:
+            for child in item.bom.items.values():
                 qty = item.bom.quantities.get(child.item_number, 1)
                 st.markdown(f"- {child.item_number} (Qty: {qty})")
         else:
