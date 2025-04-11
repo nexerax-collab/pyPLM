@@ -1,5 +1,6 @@
 
 import streamlit as st
+import os
 import sqlite3
 from pyPLM import (
     create_database, get_db_connection, Item, BOM, ChangeRequest,
@@ -235,7 +236,6 @@ elif main_menu == "System Status & Logs":
 
 
     # Check for errors in log file
-    import os
     error_log = 'plm_tool.log'
     if os.path.exists(error_log):
         with open(error_log) as log_file:
