@@ -29,7 +29,7 @@ class Item:
         last_number = cursor.fetchone()[0] or 0
         next_number = last_number + 1
         self.item_number = f"P{next_number:04}"
-                self.upper_level = None
+        self.upper_level = None
         self.lower_level = []
         self.bom = BOM()
         self.bom.add_item(self)  # Ensure root item is in BOM
