@@ -7,6 +7,10 @@ from pyPLM import (
 )
 
 st.set_page_config(page_title="PyPLM", layout="wide")
+if 'role' not in st.session_state:
+    st.session_state['role'] = 'admin'
+if 'username' not in st.session_state:
+    st.session_state['username'] = 'admin'
 
 # Branding/Header
 st.markdown("""
