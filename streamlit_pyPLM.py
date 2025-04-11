@@ -23,25 +23,18 @@ st.write('✔ BOM Initialized')
 st.write('✔ Connecting to DB')
 with get_db_connection() as conn:
     cursor = conn.cursor()
-st.write('✔ Cursor ready')
+    st.write('✔ Cursor ready')
     cursor.execute("SELECT * FROM items")
     rows = cursor.fetchall()
-st.write(f'✔ Loaded {len(rows)} items')
+    st.write(f'✔ Loaded {len(rows)} items')
     for row in rows:
         item = Item()
         item.item_number = row[0]
-        item.revision = row[1]
         if row[2]:
             upper = bom.get_item(row[2])
             if upper:
                 item.upper_level = upper
         bom.add_item(item)
-
-# Ensure session state
-st.session_state.authenticated = True
-st.session_state.role = "admin"
-
-# Always visible sidebar
 main_menu = st.sidebar.selectbox("Main Menu", [
     "Item Management", "Change Management", "Document Management", "BOM Management",
     "User Management", "Purge Database"
