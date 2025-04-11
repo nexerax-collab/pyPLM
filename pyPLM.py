@@ -92,7 +92,7 @@ def create_database():
 
 def add_item_to_db(item):
     conn = get_db_connection()
-    conn.execute("INSERT INTO items (item_number, revision, upper_level) VALUES (?, ?, ?)",
+    conn.execute("INSERT INTO items (item_number, upper_level) VALUES (?, ?)",
                  (item.item_number,  item.upper_level.item_number if item.upper_level else None))
     conn.commit()
 
