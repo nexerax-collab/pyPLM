@@ -67,7 +67,9 @@ if main_menu == "Item Management":
         item = bom.get_item(target)
         if item:
             st.write(f"BOM for {item.item_number}")
-            for child in item.bom.items.values():
+            for i_num, child in item.bom.items.items():
+                qty = item.bom.quantities.get(i_num, 1)
+                st.markdown(f"- {i_num} (Qty: {qty}, Rev: {child.revision})")
                 st.markdown(f"- {child.item_number} (Rev {child.revision})")
         else:
             st.warning("Item not found")
@@ -127,7 +129,9 @@ elif main_menu == "BOM Management":
         item = bom.get_item(item_number)
         if item:
             st.write(f"BOM for {item.item_number}")
-            for child in item.bom.items.values():
+            for i_num, child in item.bom.items.items():
+                qty = item.bom.quantities.get(i_num, 1)
+                st.markdown(f"- {i_num} (Qty: {qty}, Rev: {child.revision})")
                 qty = item.bom.quantities.get(child.item_number, 1)
                 st.markdown(f"- {child.item_number} (Qty: {qty})")
         else:
