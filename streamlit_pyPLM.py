@@ -14,7 +14,7 @@ if 'username' not in st.session_state:
 
 # Branding/Header
 st.markdown("""
-<h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>Pi PLM</h1>
+<h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>PyPLM</h1>
 <p style='color:gray;'>Your lightweight PLM system</p>
 """, unsafe_allow_html=True)
 
@@ -222,14 +222,19 @@ elif main_menu == "System Status & Logs":
         st.markdown("**Items in DB:** 🟡 No items found")
     else:
         st.markdown(f"**Items in DB:** 🟢 {item_count} item(s)")
+    
     st.subheader("📊 Database Statistics")
 
-    # Total entries per table
-    tables = ["items", "change_requests", "documents"]
-    for table in tables:
+    # Total entries per table (ordered and clearly labeled)
+    tables = [("items", "📦 Items"), ("change_requests", "🔁 Change Requests"), ("documents", "📄 Documents")]
+    for table_name, label in tables:
         try:
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             count = cursor.fetchone()[0]
+            st.markdown(f"**{label}**: {count} record(s)")
+        except:
+            st.markdown(f"**{label}**: ⚠️ Table not found")
+
             st.markdown(f"**{table}**: {count} record(s)")
         except:
             st.markdown(f"**{table}**: ⚠️ Table not found")
