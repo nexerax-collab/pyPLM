@@ -1,4 +1,3 @@
-
 import streamlit as st
 import sqlite3
 from pyPLM import (
@@ -8,40 +7,40 @@ from pyPLM import (
 
 st.set_page_config(page_title="PyPLM", layout="wide")
 
-# Branding/Header
 st.markdown("""
 <h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>Pi PLM</h1>
 <p style='color:gray;'>Your lightweight PLM system</p>
 """, unsafe_allow_html=True)
 
-# Database + BOM
+# Init DB
 create_database()
-st.write('✔ DB Initialized')
-bom = BOM()
-st.write('✔ BOM Initialized')
+st.write("✔ DB Initialized")
 
-st.write('✔ Connecting to DB')
+bom = BOM()
+st.write("✔ BOM Initialized")
+
+# Load items
+st.write("✔ Connecting to DB")
 with get_db_connection() as conn:
     cursor = conn.cursor()
-st.write('✔ Cursor ready')
+    st.write("✔ Cursor ready")
     cursor.execute("SELECT * FROM items")
     rows = cursor.fetchall()
-st.write(f'✔ Loaded {len(rows)} items')
+    st.write(f"✔ Loaded {len(rows)} items")
     for row in rows:
         item = Item()
         item.item_number = row[0]
-        item.revision = row[1]
         if row[2]:
             upper = bom.get_item(row[2])
             if upper:
                 item.upper_level = upper
         bom.add_item(item)
 
-# Ensure session state
+# Session defaults
 st.session_state.authenticated = True
 st.session_state.role = "admin"
 
-# Always visible sidebar
+# Sidebar
 main_menu = st.sidebar.selectbox("Main Menu", [
     "Item Management", "Change Management", "Document Management", "BOM Management",
     "User Management", "Purge Database"
@@ -56,7 +55,7 @@ if main_menu == "Item Management":
             item = Item()
             bom.add_item(item)
             add_item_to_db(item)
-            st.success(f"Created Item {item.item_number} (Rev {item.revision})")
+            st.success(f"Created Item {item.item_number}")
     elif action == "Link Items":
         p = st.text_input("Parent Item")
         c = st.text_input("Child Item")
@@ -75,8 +74,7 @@ if main_menu == "Item Management":
             st.write(f"BOM for {item.item_number}")
             for i_num, child in item.bom.items.items():
                 qty = item.bom.quantities.get(i_num, 1)
-                st.markdown(f"- {i_num} (Qty: {qty}, Rev: {child.revision})")
-                st.markdown(f"- {child.item_number} (Rev {child.revision})")
+                st.markdown(f"- {i_num} (Qty: {qty})")
         else:
             st.warning("Item not found")
 
@@ -95,7 +93,7 @@ elif main_menu == "Change Management":
                 add_change_request_to_db(cr)
                 st.success(f"CR#{cr.change_request_number} created")
             else:
-                st.warning("Reason and cost required.")
+                st.warning("Please enter a valid numeric cost and reason.")
         else:
             st.warning("Item not found")
     elif act == "Update Status":
@@ -137,9 +135,7 @@ elif main_menu == "BOM Management":
             st.write(f"BOM for {item.item_number}")
             for i_num, child in item.bom.items.items():
                 qty = item.bom.quantities.get(i_num, 1)
-                st.markdown(f"- {i_num} (Qty: {qty}, Rev: {child.revision})")
-                qty = item.bom.quantities.get(child.item_number, 1)
-                st.markdown(f"- {child.item_number} (Qty: {qty})")
+                st.markdown(f"- {i_num} (Qty: {qty})")
         else:
             st.warning("Item not found")
     elif bom_action == "Link Items":
@@ -188,7 +184,7 @@ elif main_menu == "BOM Management":
         else:
             st.warning("Item not found")
 
-# Admin Sections
+# Admin
 elif main_menu == "Purge Database":
     if st.session_state.role == "admin":
         if st.checkbox("Yes, I understand"):
