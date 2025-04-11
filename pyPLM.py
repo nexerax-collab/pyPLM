@@ -1,4 +1,3 @@
-
 import sqlite3
 
 def get_db_connection():
@@ -66,13 +65,13 @@ class Document:
 def create_database():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS items (
             item_number TEXT PRIMARY KEY,
             revision TEXT,
             upper_level TEXT
-        )""")
-    cursor.execute("""
+        )''')
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS change_requests (
             change_request_number INTEGER PRIMARY KEY,
             item_number TEXT,
@@ -80,14 +79,14 @@ def create_database():
             cost_impact TEXT,
             timeline_impact TEXT,
             status TEXT
-        )""")
-    cursor.execute("""
+        )''')
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS documents (
             document_number TEXT PRIMARY KEY,
             version INTEGER,
             file_path TEXT,
             content TEXT
-        )""")
+        )''')
     conn.commit()
 
 def add_item_to_db(item):
