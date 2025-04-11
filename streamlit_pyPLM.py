@@ -20,17 +20,12 @@ st.markdown("""
 
 # Database + BOM
 create_database()
-st.write('✔ DB Initialized')
 bom = BOM()
-st.write('✔ BOM Initialized')
 
-st.write('✔ Connecting to DB')
 with get_db_connection() as conn:
     cursor = conn.cursor()
-    st.write('✔ Cursor ready')
     cursor.execute("SELECT * FROM items")
     rows = cursor.fetchall()
-    st.write(f'✔ Loaded {len(rows)} items')
     for row in rows:
         item = Item()
         item.item_number = row[0]
@@ -227,6 +222,18 @@ elif main_menu == "System Status & Logs":
         st.markdown("**Items in DB:** 🟡 No items found")
     else:
         st.markdown(f"**Items in DB:** 🟢 {item_count} item(s)")
+    st.subheader("📊 Database Statistics")
+
+    # Total entries per table
+    tables = ["items", "change_requests", "documents"]
+    for table in tables:
+        try:
+            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            count = cursor.fetchone()[0]
+            st.markdown(f"**{table}**: {count} record(s)")
+        except:
+            st.markdown(f"**{table}**: ⚠️ Table not found")
+
 
     # Check for errors in log file
     import os
