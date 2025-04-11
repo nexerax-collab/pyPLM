@@ -233,6 +233,8 @@ elif main_menu == "System Status & Logs":
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             count = cursor.fetchone()[0]
             st.markdown(f"**{label}**: {count} record(s)")
+        except:
+            st.markdown(f"**{label}**: ⚠️ Table not found")
 
 
     # Check for errors in log file
