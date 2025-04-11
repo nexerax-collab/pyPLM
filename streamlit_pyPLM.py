@@ -49,7 +49,7 @@ if main_menu == "Item Management":
             item = Item()
             bom.add_item(item)
             add_item_to_db(item)
-            st.success(f"Created Item {item.item_number} (Rev {item.revision})")
+            st.success(f"Created Item {item.item_number}")
     elif action == "Link Items":
         p = st.text_input("Parent Item")
         c = st.text_input("Child Item")
