@@ -10,7 +10,7 @@ st.set_page_config(page_title="PyPLM", layout="wide")
 
 # Branding/Header
 st.markdown("""
-<h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>PyPLM</h1>
+<h1 style='font-family: Google Sans, sans-serif; color: #34a853;'>Pi PLM</h1>
 <p style='color:gray;'>Your lightweight PLM system</p>
 """, unsafe_allow_html=True)
 
@@ -78,7 +78,9 @@ elif main_menu == "Change Management":
     st.header("Change Management")
     act = st.radio("Change Options", ["Create CR", "Update Status", "Show by Item", "Show All"])
     if act == "Create CR":
-        item_number = st.text_input("Item Number")
+        conn = get_db_connection()
+        items = [row[0] for row in conn.execute("SELECT item_number FROM items").fetchall()]
+        item_number = st.selectbox("Choose item", items)  # dropdown suggestion
         item = bom.get_item(item_number)
         if item:
             reason = st.selectbox("Reason", ["", "A", "B", "C", "D"])
@@ -99,7 +101,9 @@ elif main_menu == "Change Management":
         conn.commit()
         st.success(f"CR#{cr_num} updated")
     elif act == "Show by Item":
-        item_number = st.text_input("Item Number")
+        conn = get_db_connection()
+        items = [row[0] for row in conn.execute("SELECT item_number FROM items").fetchall()]
+        item_number = st.selectbox("Choose item", items)  # dropdown suggestion
         conn = get_db_connection()
         rows = conn.execute("SELECT * FROM change_requests WHERE item_number = ?", (item_number,))
         for row in rows.fetchall():
@@ -124,7 +128,9 @@ elif main_menu == "BOM Management":
     st.header("BOM Management")
     bom_action = st.radio("Select Action", ["Show BOM", "Link Items", "Remove Item", "Change Quantity", "Increment BOM Revision"])
     if bom_action == "Show BOM":
-        item_number = st.text_input("Enter Item Number")
+        conn = get_db_connection()
+        items = [row[0] for row in conn.execute("SELECT item_number FROM items").fetchall()]
+        item_number = st.selectbox("Choose item", items)  # dropdown suggestion
         item = bom.get_item(item_number)
         if item:
             st.write(f"BOM for {item.item_number}")
@@ -173,7 +179,9 @@ elif main_menu == "BOM Management":
             else:
                 st.warning("Item not found in BOM")
     elif bom_action == "Increment BOM Revision":
-        item_number = st.text_input("Enter Item to Revise")
+        conn = get_db_connection()
+        items = [row[0] for row in conn.execute("SELECT item_number FROM items").fetchall()]
+        item_number = st.selectbox("Choose item", items)  # dropdown suggestion
         item = bom.get_item(item_number)
         if item:
             item.bom.increment_revision()
