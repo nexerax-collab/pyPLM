@@ -1,3 +1,4 @@
+
 import sqlite3
 
 def get_db_connection():
@@ -32,6 +33,7 @@ class Item:
         self.upper_level = None
         self.lower_level = []
         self.bom = BOM()
+        self.bom.add_item(self)  # Ensure root item is in BOM
         self.change_requests = []
 
     def add_lower_level_item(self, item):
