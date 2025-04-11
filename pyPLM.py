@@ -1,3 +1,4 @@
+
 import sqlite3
 
 def get_db_connection():
@@ -8,12 +9,17 @@ def get_db_connection():
 class BOM:
     def __init__(self):
         self.items = {}
+        self.quantities = {}
+        self.revision = 1
 
     def add_item(self, item):
         self.items[item.item_number] = item
 
     def get_item(self, item_number):
         return self.items.get(item_number)
+
+    def increment_revision(self):
+        self.revision += 1
 
 class Item:
     def __init__(self):
@@ -37,10 +43,13 @@ class Item:
         return ChangeRequest(self, reason, cost_impact, timeline_impact)
 
 class ChangeRequest:
-    counter = 1000
     def __init__(self, item, reason, cost_impact, timeline_impact):
-        self.change_request_number = ChangeRequest.counter
-        ChangeRequest.counter += 1
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(change_request_number) FROM change_requests")
+        last = cur.fetchone()[0] or 999
+        self.change_request_number = last + 1
+
         self.item = item
         self.reason = reason
         self.cost_impact = cost_impact
@@ -57,13 +66,13 @@ class Document:
 def create_database():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS items (
             item_number TEXT PRIMARY KEY,
             revision TEXT,
             upper_level TEXT
-        )''')
-    cursor.execute('''
+        )""")
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS change_requests (
             change_request_number INTEGER PRIMARY KEY,
             item_number TEXT,
@@ -71,14 +80,14 @@ def create_database():
             cost_impact TEXT,
             timeline_impact TEXT,
             status TEXT
-        )''')
-    cursor.execute('''
+        )""")
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS documents (
             document_number TEXT PRIMARY KEY,
             version INTEGER,
             file_path TEXT,
             content TEXT
-        )''')
+        )""")
     conn.commit()
 
 def add_item_to_db(item):
