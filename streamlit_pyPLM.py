@@ -14,15 +14,8 @@ col1, col2 = st.columns([1, 10])
 with col1:
     st.image("pyplm_cat_logo_small.gif", width=50)
 with col2:
-    st.markdown("## PyPLM")
+    st.markdown("### PyPLM\n*Lightweight PLM for developers*", unsafe_allow_html=True)
 
-# Add a small animated cat logo to the header
-st.markdown(
-    "<div style='display: flex; align-items: center;'>"
-    "<img src='pyplm_cat_logo_small.gif' width='50' style='margin-right: 10px'/>"
-    "<h1 style='display:inline;'>PyPLM</h1>"
-    "</div>",
-    unsafe_allow_html=True
 )
 
 import time
