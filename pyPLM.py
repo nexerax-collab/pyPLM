@@ -11,6 +11,11 @@ class BOM:
         self.items = {}
         self.quantities = {}
         self.revision = 1
+        self.quantities = {}
+
+    def add_item(self, item, quantity=1):
+        self.items[item.item_number] = item
+        self.quantities[item.item_number] = quantity
 
     def add_item(self, item):
         self.items[item.item_number] = item
@@ -19,6 +24,12 @@ class BOM:
         return self.items.get(item_number)
 
     def increment_revision(self):
+
+    def change_quantity(self, item_number, new_quantity):
+        if item_number in self.items:
+            self.quantities[item_number] = new_quantity
+        else:
+            print(f"Item {item_number} not found in BOM.")
         self.revision += 1
 
 class Item:
