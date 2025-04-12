@@ -14,6 +14,9 @@ class BOM:
         self.quantities = {}
 
     def add_item(self, item, quantity=1):
+
+    def get_item(self, item_number):
+        return self.items.get(item_number, None)
         self.items[item.item_number] = item
         self.quantities[item.item_number] = quantity
 
