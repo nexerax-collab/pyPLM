@@ -65,13 +65,45 @@ if main_menu == "Change Requests":
             else:
                 st.error("Item not found")
 
+
 if main_menu == "BOM Management":
-    st.header("BOM Viewer + Quantity Editor")
+    st.header("BOM Table Viewer & Editor")
     selected_item = st.text_input("Enter Item Number")
     item = bom.get_item(selected_item)
+
     if item:
-        st.markdown("### Bill of Materials")
-        st.markdown(f"1. **{item.item_number}** (Top-level, Qty: 1)")
+        st.markdown("### Parts List for BOM")
+        data = []
+        data.append({
+            "Item Number": item.item_number,
+            "Description": "Top-level Item",
+            "Quantity": 1
+        })
+
+        if item.bom.items:
+            for child_id, child in item.bom.items.items():
+                qty = item.bom.quantities.get(child_id, 1)
+                data.append({
+                    "Item Number": child_id,
+                    "Description": "Linked Item",
+                    "Quantity": qty
+                })
+
+            df = pd.DataFrame(data)
+            st.dataframe(df, use_container_width=True)
+
+            # Export option
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📤 Export BOM as CSV",
+                data=csv,
+                file_name=f"{item.item_number}_bom.csv",
+                mime='text/csv'
+            )
+        else:
+            st.info("No lower-level items linked.")
+    else:
+        st.warning("Item not found.")
 
         if item.bom.items:
             st.markdown("### Linked Items")
