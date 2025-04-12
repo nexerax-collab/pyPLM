@@ -33,14 +33,10 @@ with get_db_connection() as conn:
 # Second pass to build relationships
 for item in list(bom.items.values()):
     if item.upper_level_number:
-        upper_level_number = getattr(item, 'upper_level_number', None)
-        if upper_level_number:
-            parent = bom.get_item(upper_level_number)
-            if parent:
-                item.upper_level = parent
-                parent.bom.add_item(item)
-                parent.add_lower_level_item(item)
-                del item.upper_level_number
+        parent = bom.get_item(getattr(item, 'upper_level_number', None))
+        if parent:
+            item.upper_level = parent
+            parent.bom.add_item(item)
             parent.add_lower_level_item(item)
             del item.upper_level_number
 main_menu = st.sidebar.selectbox("Main Menu", [
