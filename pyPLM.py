@@ -17,21 +17,6 @@ class BOM:
         self.items[item.item_number] = item
         self.quantities[item.item_number] = quantity
 
-    def add_item(self, item):
-        self.items[item.item_number] = item
-
-    def get_item(self, item_number):
-        return self.items.get(item_number)
-
-    def increment_revision(self):
-
-    def change_quantity(self, item_number, new_quantity):
-        if item_number in self.items:
-            self.quantities[item_number] = new_quantity
-        else:
-            print(f"Item {item_number} not found in BOM.")
-        self.revision += 1
-
 class Item:
     def __init__(self):
         conn = get_db_connection()
