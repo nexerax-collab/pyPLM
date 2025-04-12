@@ -8,6 +8,23 @@ from pyPLM import (
 )
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
+
+if "splash_shown" not in st.session_state:
+    splash = st.empty()
+    with splash.container():
+        st.markdown("### 🐾 Welcome to PyPLM")
+        st.code("""
+  |\---/|
+  | o_o |   Initializing PLM for Developers...
+   \_^_/    🐱 Loading Your Modules...
+""")
+        st.info("Hang tight, we're getting your system ready!")
+        import time
+        time.sleep(3)
+    splash.empty()
+    st.session_state["splash_shown"] = True
+
+st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM tool reimagined for developers</p>", unsafe_allow_html=True)
 
 create_database()
@@ -254,3 +271,12 @@ if main_menu == "Module Roadmap":
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
             st.markdown(f"- {item}")
+
+if main_menu == "Resources":
+    st.header("📚 PLM Knowledge Portal")
+    st.markdown("### 💡 What is PLM?")
+    st.write("Product Lifecycle Management (PLM) is the backbone of managing changes, modules, and dependencies in engineering and dev environments.")
+    st.markdown("- [🧠 Wikipedia - Change Management](https://en.wikipedia.org/wiki/Change_management)")
+    st.markdown("- [🔗 Aras PLM](https://www.aras.com/)")
+    st.markdown("- [🔧 Dassault Systèmes 3DEXPERIENCE](https://www.3ds.com/)")
+    st.markdown("- [📘 GitHub: pyPLM Project](https://github.com/nexerax-collab/pyPLM)")
