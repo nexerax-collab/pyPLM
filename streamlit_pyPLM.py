@@ -95,7 +95,7 @@ elif main_menu == "Change Management":
     "C - < 10k",
     "D - > 10k"
 ])
-cost_value = {"A": "1", "B": "5", "C": "10", "D": "15"}[cost[0]]
+            cost_value = {"A": "1", "B": "5", "C": "10", "D": "15"}[cost[0]]
             if reason and cost.replace(".", "", 1).isdigit():
                 cr = item.create_change_request(reason[0], cost_value, timeline_impact="< 2 weeks")
                 add_change_request_to_db(cr)
