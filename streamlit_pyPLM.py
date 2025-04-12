@@ -123,14 +123,14 @@ if main_menu == "BOM Management":
                                 min_value=1,
                                 step=1,
                                 value=row['Quantity'],
-                                key="qty_" + row["Item Number"]
+                                key="qty_input_" + row["Item Number"]
                             )
                         with col2:
-                            if st.button(f"Update Quantity for {row['Item Number']}", key="btn_qty_" + row["Item Number"]):
+                            if st.button(f"Update Quantity for {row['Item Number']}", key="btn_qty_input_" + row["Item Number"]):
                                 item.bom.change_quantity(row["Item Number"], new_qty)
                                 updated = True
                         with col3:
-                            if st.button(f"Unlink {row['Item Number']}", key="btn_unlink_" + row["Item Number"]):
+                            if st.button(f"Unlink {row['Item Number']}", key="btn_unlink_input_" + row["Item Number"]):
                                 if row["Item Number"] in item.bom.items:
                                     del item.bom.items[row["Item Number"]]
                                     item.lower_level = [i for i in item.lower_level if i.item_number != row["Item Number"]]
@@ -156,7 +156,7 @@ if main_menu == "BOM Management":
                             min_value=1,
                             step=1,
                             value=row['Quantity'],
-                            key="qty_" + row["Item Number"]
+                            key="qty_input_" + row["Item Number"]
                         )
                         if st.button(f"Update Quantity for {row['Item Number']}", key="btn_" + row["Item Number"]):
                             item.bom.change_quantity(row["Item Number"], new_qty)
