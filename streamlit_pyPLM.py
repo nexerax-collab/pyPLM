@@ -7,8 +7,8 @@ from pyPLM import (
     add_item_to_db, add_change_request_to_db, load_bom_links
 )
 
-st.set_page_config(page_title="PyPLM", layout="wide")
-st.markdown("<h1 style='color:#34a853;'>PyPLM</h1>", unsafe_allow_html=True)
+st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
+st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM tool reimagined for developers</p>", unsafe_allow_html=True)
 
 create_database()
 bom = BOM()
@@ -21,62 +21,71 @@ for row in cursor.fetchall():
     item.item_number = row["item_number"]
     bom.add_item(item)
 
-# Now load BOM links
+# Load links
 load_bom_links(bom)
 
-main_menu = st.sidebar.selectbox("Menu", ["Item Management", "Change Requests", "BOM Management", "System Status", "Purge DB"])
+main_menu = st.sidebar.selectbox("Menu", [
+    "Module Registry", "Patch Management", "Dependency Viewer", "System Status", "Purge DB"
+])
 
-if main_menu == "Item Management":
-    st.header("Item Management")
-    if st.button("Create New Item"):
+# --- Module Registry ---
+if main_menu == "Module Registry":
+    st.header("Module Registry")
+    if st.button("🧱 Commit New Module"):
         new_item = Item()
         bom.add_item(new_item)
         add_item_to_db(new_item)
-        st.success(f"Created {new_item.item_number}")
+        st.success(f"✅ Committed module `{new_item.item_number}` to registry")
 
     with st.form("link_form"):
-        st.subheader("Link Items")
-        parent = st.text_input("Parent Item")
-        child = st.text_input("Child Item")
-        quantity = st.number_input("Quantity", min_value=1, value=1)
-        submitted = st.form_submit_button("Link")
+        st.subheader("🔗 Declare Dependency")
+        parent = st.text_input("Parent Module ID", help="This is the module that will depend on another")
+        child = st.text_input("Child Module ID", help="This is the required module being linked")
+        quantity = st.number_input("Instances Required", min_value=1, value=1, help="How many units of this module are needed?")
+        submitted = st.form_submit_button("Declare Link")
         if submitted:
             p = bom.get_item(parent)
             c = bom.get_item(child)
             if p and c:
                 p.add_lower_level_item(c, quantity)
-                st.success(f"Linked {child} under {parent} (Qty: {quantity})")
+                st.success(f"🔗 `{child}` linked as dependency to `{parent}` (Qty: {quantity})")
             else:
-                st.error("One or both items not found")
+                st.error("❌ One or both modules not found in registry")
 
-if main_menu == "Change Requests":
-    st.header("Create Change Request")
+# --- Patch Management ---
+if main_menu == "Patch Management":
+    st.header("Pull Request (Patch) Tracker")
     with st.form("cr_form"):
-        item_number = st.text_input("Item Number")
-        reason = st.selectbox("Reason", ["A - Client", "B - Internal", "C - Bug", "D - Admin"])
-        cost = st.selectbox("Cost Impact", ["<1k", "<5k", "<10k", ">10k"])
-        submit_cr = st.form_submit_button("Create CR")
+        item_number = st.text_input("Module ID", help="Enter the module you're applying the patch to (e.g., P0003)")
+        reason = st.selectbox("Patch Type", [
+            "A - Feature Request",
+            "B - Refactor",
+            "C - Bugfix",
+            "D - Hotfix"
+        ], help="What type of change are you introducing?")
+        cost = st.selectbox("Complexity Level", ["<1k", "<5k", "<10k", ">10k"], help="Estimated cost or size of the patch")
+        submit_cr = st.form_submit_button("Submit Pull Request")
         if submit_cr:
             item = bom.get_item(item_number)
             if item:
                 cr = item.create_change_request(reason[0], cost, "< 2 weeks")
                 add_change_request_to_db(cr)
-                st.success(f"Created CR#{cr.change_request_number}")
+                st.success(f"✅ Pull Request #{cr.change_request_number} created for `{item.item_number}`")
             else:
-                st.error("Item not found")
+                st.error("❌ Module not found")
 
-
-if main_menu == "BOM Management":
-    st.header("BOM Table Viewer & Editor")
-    selected_item = st.text_input("Enter Item Number")
+# --- Dependency Viewer ---
+if main_menu == "Dependency Viewer":
+    st.header("📦 View Dependencies")
+    selected_item = st.text_input("Enter Module ID", help="View linked dependencies for this module")
     item = bom.get_item(selected_item)
 
     if item:
-        st.markdown("### Parts List for BOM")
+        st.markdown("### Dependency List (BOM View)")
         data = []
         data.append({
-            "Item Number": item.item_number,
-            "Description": "Top-level Item",
+            "Module ID": item.item_number,
+            "Role": "Top-level Module",
             "Quantity": 1
         })
 
@@ -84,45 +93,31 @@ if main_menu == "BOM Management":
             for child_id, child in item.bom.items.items():
                 qty = item.bom.quantities.get(child_id, 1)
                 data.append({
-                    "Item Number": child_id,
-                    "Description": "Linked Item",
+                    "Module ID": child_id,
+                    "Role": "Dependency",
                     "Quantity": qty
                 })
 
+            import pandas as pd
             df = pd.DataFrame(data)
             st.dataframe(df, use_container_width=True)
 
-            # Export option
+            # Export button
             csv = df.to_csv(index=False).encode('utf-8')
             st.download_button(
-                label="📤 Export BOM as CSV",
+                label="📤 Export as CSV",
                 data=csv,
-                file_name=f"{item.item_number}_bom.csv",
+                file_name=f"{item.item_number}_dependencies.csv",
                 mime='text/csv'
             )
         else:
-            st.info("No lower-level items linked.")
+            st.info("No dependencies declared for this module.")
     else:
-        st.warning("Item not found.")
+        st.warning("Module not found in registry.")
 
-        if item.bom.items:
-            st.markdown("### Linked Items")
-            for idx, (child_id, child) in enumerate(item.bom.items.items(), start=2):
-                qty = item.bom.quantities.get(child_id, 1)
-                st.markdown(f"{idx}. **{child_id}** — Qty: {qty}")
-
-                new_qty = st.number_input(f"Edit quantity for {child_id}", min_value=1, value=qty, key=f"qty_{child_id}")
-                if st.button(f"Update Qty for {child_id}", key=f"btn_{child_id}"):
-                    item.bom.change_quantity(child_id, new_qty)
-                    st.success(f"Updated quantity for {child_id} to {new_qty}")
-        else:
-            st.info("No lower-level items linked.")
-    else:
-        st.warning("Item not found.")
-
+# --- System Status ---
 if main_menu == "System Status":
-    st.header("System Status")
-    conn = get_db_connection()
+    st.header("🧭 System Dashboard")
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM items")
     items_count = cursor.fetchone()[0]
@@ -131,21 +126,22 @@ if main_menu == "System Status":
     cursor.execute("SELECT COUNT(*) FROM documents")
     doc_count = cursor.fetchone()[0]
 
-    st.metric("Items", items_count)
-    st.metric("Change Requests", cr_count)
-    st.metric("Documents", doc_count)
+    st.metric("Modules Committed", items_count)
+    st.metric("Patches Submitted", cr_count)
+    st.metric("Documents Attached", doc_count)
 
-    st.markdown("### Recent Logs")
+    st.markdown("### 📋 Recent System Logs")
     if os.path.exists("plm_tool.log"):
         with open("plm_tool.log", "r") as f:
             logs = f.readlines()[-10:]
             st.code("".join(logs), language="text")
     else:
-        st.info("No log file found.")
+        st.info("Log file not found.")
 
+# --- Purge ---
 if main_menu == "Purge DB":
-    st.warning("This will delete all data.")
-    if st.button("Confirm Purge"):
+    st.warning("This will delete all project data.")
+    if st.button("⚠️ Confirm Project Reset"):
         conn = get_db_connection()
         c = conn.cursor()
         c.execute("DELETE FROM items")
@@ -153,4 +149,4 @@ if main_menu == "Purge DB":
         c.execute("DELETE FROM documents")
         c.execute("DELETE FROM bom_links")
         conn.commit()
-        st.success("Database purged.")
+        st.success("🗑️ Project reset complete.")
