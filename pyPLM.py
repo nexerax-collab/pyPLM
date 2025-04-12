@@ -24,9 +24,6 @@ class BOM:
         self.quantities[item.item_number] = quantity
         pass
 
-        return self.items.get(item_number, None)
-        self.items[item.item_number] = item
-        self.quantities[item.item_number] = quantity
 
 class Item:
     def __init__(self):
@@ -48,24 +45,10 @@ class Item:
         item.upper_level = self
         pass
 
-    def create_change_request(self, reason, cost_impact, timeline_impact):
-        return ChangeRequest(self, reason, cost_impact, timeline_impact)
-        pass
-
-class ChangeRequest:
-    def __init__(self, item, reason, cost_impact, timeline_impact):
-        conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT MAX(change_request_number) FROM change_requests")
         last = cur.fetchone()[0] or 999
-        self.change_request_number = last + 1
-        pass
 
-        self.item = item
-        self.reason = reason
-        self.cost_impact = cost_impact
-        self.timeline_impact = timeline_impact
-        self.status = "Created"
 
 class Document:
     def __init__(self, document_number, version, file_path, content):
@@ -73,7 +56,6 @@ class Document:
         self.version = version
         self.file_path = file_path
         self.content = content
-        pass
 
 def create_database():
     conn = get_db_connection()
@@ -101,7 +83,6 @@ def create_database():
             content TEXT
         )''')
     conn.commit()
-    pass
 
 def add_item_to_db(item):
         self.items[item.item_number] = item
@@ -110,7 +91,6 @@ def add_item_to_db(item):
     conn.execute("INSERT INTO items (item_number, upper_level) VALUES (?, ?)",
                  (item.item_number,  item.upper_level.item_number if item.upper_level else None))
     conn.commit()
-    pass
 
 def add_change_request_to_db(cr):
     conn = get_db_connection()
@@ -119,7 +99,6 @@ def add_change_request_to_db(cr):
         VALUES (?, ?, ?, ?, ?, ?)''',
         (cr.change_request_number, cr.item.item_number, cr.reason, cr.cost_impact, cr.timeline_impact, cr.status))
     conn.commit()
-    pass
 
 def get_document_from_db(doc_number):
     conn = get_db_connection()
@@ -129,7 +108,6 @@ def get_document_from_db(doc_number):
     if row:
         return Document(row[0], row[1], row[2], row[3])
     return None
-    pass
 
 def add_document_to_db(doc):
     conn = get_db_connection()
