@@ -35,6 +35,8 @@ for item in list(bom.items.values()):
     if item.upper_level_number:
         parent = bom.get_item(getattr(item, 'upper_level_number', None))
         if parent:
+            item.upper_level = parent
+        if parent:
             parent.bom.add_item(item)
             parent.add_lower_level_item(item)
         del item.upper_level_number
