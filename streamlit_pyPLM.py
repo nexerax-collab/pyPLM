@@ -40,6 +40,7 @@ for item in list(bom.items.values()):
         if parent:
             parent.bom.add_item(item)
             parent.add_lower_level_item(item)
+            pass
         del item.upper_level_number
 
 main_menu = st.sidebar.selectbox("Main Menu", [
