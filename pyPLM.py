@@ -37,6 +37,15 @@ def create_database():
             content TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bom_links (
+            parent_item TEXT,
+            child_item TEXT,
+            quantity INTEGER,
+            FOREIGN KEY (parent_item) REFERENCES items(item_number),
+            FOREIGN KEY (child_item) REFERENCES items(item_number)
+        )
+    ''')
     conn.commit()
 
 class BOM:
@@ -71,6 +80,7 @@ class Item:
     def add_lower_level_item(self, item, quantity=1):
         self.bom.add_item(item, quantity)
         item.upper_level = self
+        add_bom_link_to_db(self.item_number, item.item_number, quantity)
 
     def create_change_request(self, reason, cost_impact, timeline_impact):
         return ChangeRequest(self, reason, cost_impact, timeline_impact)
@@ -110,3 +120,28 @@ def add_change_request_to_db(cr):
         conn.commit()
     except Exception as e:
         logging.error(f"CR DB Error: {e}")
+
+def add_bom_link_to_db(parent_item, child_item, quantity):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO bom_links (parent_item, child_item, quantity) VALUES (?, ?, ?)",
+                       (parent_item, child_item, quantity))
+        conn.commit()
+    except Exception as e:
+        logging.error(f"BOM Link DB Error: {e}")
+
+def load_bom_links(bom):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM bom_links")
+    links = cursor.fetchall()
+
+    item_map = {item.item_number: item for item in bom.items.values()}
+    for row in links:
+        parent = item_map.get(row["parent_item"])
+        child = item_map.get(row["child_item"])
+        qty = row["quantity"]
+        if parent and child:
+            parent.bom.add_item(child, qty)
+            child.upper_level = parent
