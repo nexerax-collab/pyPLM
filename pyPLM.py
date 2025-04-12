@@ -16,7 +16,8 @@ def create_database():
         CREATE TABLE IF NOT EXISTS items (
             item_number TEXT PRIMARY KEY,
             revision TEXT,
-            upper_level TEXT
+            upper_level TEXT,
+            state TEXT DEFAULT 'Draft'
         )
     ''')
     cursor.execute('''
@@ -69,6 +70,7 @@ class Item:
         self.item_number = self.generate_item_number()
         self.upper_level = None
         self.bom = BOM()
+        self.state = "Draft"
 
     def generate_item_number(self):
         conn = get_db_connection()
@@ -105,8 +107,8 @@ def add_item_to_db(item):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO items (item_number, revision, upper_level) VALUES (?, ?, ?)",
-                       (item.item_number, "A", item.upper_level.item_number if item.upper_level else None))
+        cursor.execute("INSERT INTO items (item_number, revision, upper_level, state) VALUES (?, ?, ?, ?)",
+                       (item.item_number, "A", item.upper_level.item_number if item.upper_level else None, item.state))
         conn.commit()
     except Exception as e:
         logging.error(f"DB Error: {e}")
