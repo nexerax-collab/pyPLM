@@ -60,22 +60,38 @@ elif main_menu == "BOM Management":
     bom_action = st.radio("BOM Options", ["Link Items", "Show BOM"])
 
     
+    
+    
     if bom_action == "Link Items":
         parent = st.text_input("Parent Item Number")
         child = st.text_input("Child Item Number")
         if st.button("Link"):
             parent_item = bom.get_item(parent)
             child_item = bom.get_item(child)
+
             if parent_item and child_item:
                 parent_item.add_lower_level_item(child_item)
+
                 conn = get_db_connection()
                 cursor = conn.cursor()
+
+                # Ensure both items exist in the database
                 cursor.execute("SELECT COUNT(*) FROM items WHERE item_number = ?", (child_item.item_number,))
                 if cursor.fetchone()[0] == 0:
                     add_item_to_db(child_item)
+
+                # Save the upper_level reference in DB
+                cursor.execute(
+                    "UPDATE items SET upper_level = ? WHERE item_number = ?",
+                    (parent_item.item_number, child_item.item_number)
+                )
+                conn.commit()
+
                 st.success(f"Linked {child} as child of {parent}")
             else:
                 st.error("One or both items not found")
+
+
 
 
     
