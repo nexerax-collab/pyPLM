@@ -27,17 +27,17 @@ with get_db_connection() as conn:
     for row in rows:
         item = Item()
         item.item_number = row[0]
-        getattr(item, 'upper_level_number', None) = row[2]
+        item.upper_level_number = row[2]
         bom.add_item(item)
 
 # Second pass to build relationships
 for item in list(bom.items.values()):
-    if getattr(item, 'upper_level_number', None):
+    if item.upper_level_number:
         parent = bom.get_item(getattr(item, 'upper_level_number', None))
         if parent:
             parent.bom.add_item(item)
             parent.add_lower_level_item(item)
-        del getattr(item, 'upper_level_number', None)
+        del item.upper_level_number
 
 main_menu = st.sidebar.selectbox("Main Menu", [
     "Item Management", "BOM Management", "Change Management", "Document Management", "System Status", "Purge Database"
