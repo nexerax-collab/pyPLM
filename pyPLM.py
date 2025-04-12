@@ -42,9 +42,15 @@ def create_database():
 class BOM:
     def __init__(self):
         self.items = {}
+        self.quantities = {}
 
-    def add_item(self, item):
+    def add_item(self, item, quantity=1):
         self.items[item.item_number] = item
+        self.quantities[item.item_number] = quantity
+
+    def change_quantity(self, item_number, new_quantity):
+        if item_number in self.quantities:
+            self.quantities[item_number] = new_quantity
 
     def get_item(self, item_number):
         return self.items.get(item_number, None)
@@ -62,8 +68,8 @@ class Item:
         last_number = cursor.fetchone()[0] or 0
         return f"P{last_number + 1:04d}"
 
-    def add_lower_level_item(self, item):
-        self.bom.add_item(item)
+    def add_lower_level_item(self, item, quantity=1):
+        self.bom.add_item(item, quantity)
         item.upper_level = self
 
     def create_change_request(self, reason, cost_impact, timeline_impact):
