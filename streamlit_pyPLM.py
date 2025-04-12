@@ -184,7 +184,7 @@ if main_menu == "Glossary":
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle State")
-    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None), help="Check and update the state of a specific module")
+    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None, help="Check and update the state of a specific module")
 
     if item_id:
         conn = get_db_connection()
@@ -216,7 +216,7 @@ if main_menu == "Workflow Simulator":
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle Tracker")
-    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None), help="Check and update the lifecycle stage")
+    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None, help="Check and update the state of a specific module")
 
     if item_id:
         conn = get_db_connection()
