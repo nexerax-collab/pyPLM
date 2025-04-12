@@ -63,8 +63,10 @@ if main_menu == "Module Registry":
         quantity = st.number_input("Instances Required", min_value=1, value=1, help="How many units of this module are needed?")
         submitted = st.form_submit_button("Declare Link")
         if submitted:
-            p = bom.get_item(parent)
-            c = bom.get_item(child)
+    if parent:
+        p = bom.get_item(parent)
+    if child:
+        c = bom.get_item(child)
             if p and c:
                 p.add_lower_level_item(c, quantity)
                 st.success(f"🔗 `{child}` linked as dependency to `{parent}` (Qty: {quantity})")
@@ -272,8 +274,8 @@ if main_menu == "Module Roadmap":
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
             st.markdown(f"- {item}")
-        parent = st.selectbox("Parent Module", options=available_item_ids, index=0 if available_item_ids else None, help="This is the module that will depend on another")
-        child = st.selectbox("Child Module", options=available_item_ids, index=0 if available_item_ids else None, help="This is the required module being linked")
+    parent = st.selectbox("Parent Module", options=available_item_ids) if available_item_ids else None
+    child = st.selectbox("Child Module", options=available_item_ids) if available_item_ids else None
 
 if main_menu == "PLM Resources":
     st.header("📚 Learn About PLM and Change Management")
