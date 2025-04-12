@@ -1,6 +1,6 @@
-            from pyPLM import get_item_state, update_item_state
-            import pandas as pd
-    from collections import defaultdict
+from pyPLM import get_item_state, update_item_state
+import pandas as pd
+from collections import defaultdict
 from pyPLM import (
 import os
 import sqlite3
