@@ -68,17 +68,20 @@ if main_menu == "Change Requests":
             else:
                 st.error("Item not found")
 
+
 if main_menu == "BOM Management":
     st.header("BOM Viewer")
     selected_item = st.text_input("Enter Item Number")
     item = bom.get_item(selected_item)
     if item:
         st.subheader(f"BOM for {item.item_number}")
+        st.markdown(f"• **{item.item_number}** (Top-level, Qty: 1)")
         if item.bom.items:
-            for i_num in item.bom.items:
-                st.markdown(f"• **{i_num}** (linked)")
+            for i_num, linked_item in item.bom.items.items():
+                if linked_item.item_number != item.item_number:
+                    st.markdown(f"  ↳ **{linked_item.item_number}** (linked)")
         else:
-            st.info("No items in BOM.")
+            st.info("No lower-level items linked.")
     else:
         st.warning("Item not found.")
 
