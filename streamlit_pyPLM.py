@@ -308,8 +308,8 @@ if main_menu == "Interactive Tutorial":
     if "tutorial_step" not in st.session_state:
         st.session_state["tutorial_step"] = 1
     st.session_state["tutorial_xp"] += 1
-        st.session_state["tutorial_item"] = None
-        st.session_state["tutorial_child"] = None
+    st.session_state["tutorial_item"] = None
+    st.session_state["tutorial_child"] = None
 
     step = st.session_state["tutorial_step"]
 
@@ -319,7 +319,7 @@ if main_menu == "Interactive Tutorial":
         if st.button("🧱 Commit Module"):
             from pyPLM import Item, add_item_to_db
             new_item = Item()
-            st.session_state["tutorial_item"] = new_item.item_number
+    st.session_state["tutorial_item"] = new_item.item_number
             add_item_to_db(new_item)
             st.success(f"✅ Committed `{new_item.item_number}` successfully!")
             st.session_state["tutorial_step"] = 2
@@ -330,7 +330,7 @@ if main_menu == "Interactive Tutorial":
         st.markdown("Now link another module as a dependency (like adding a library or module import).")
         from pyPLM import Item, add_item_to_db, get_db_connection
         new_child = Item()
-        st.session_state["tutorial_child"] = new_child.item_number
+    st.session_state["tutorial_child"] = new_child.item_number
         add_item_to_db(new_child)
         st.success(f"✅ Added `{new_child.item_number}` as a potential dependency.")
         if st.button("🔗 Link It"):
