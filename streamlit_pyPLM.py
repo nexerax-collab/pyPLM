@@ -150,3 +150,47 @@ if main_menu == "Purge DB":
         c.execute("DELETE FROM bom_links")
         conn.commit()
         st.success("🗑️ Project reset complete.")
+
+if main_menu == "Glossary":
+    st.header("📖 PLM Glossary for Developers")
+    glossary = {
+        "Module (Item)": "A reusable unit or part in a system, like a class, package, or microservice.",
+        "Dependency (BOM)": "Other modules this one depends on — like imports or library references.",
+        "Pull Request (Change Request)": "A request to make a change to a module — reviewed and approved.",
+        "Lifecycle / Workflow": "The stages a module goes through: Draft → Reviewed → Released.",
+        "Document": "A spec, diagram, or PDF linked to a module or request — like a README or architecture doc.",
+        "Quantity": "How many units of a module are used — think of this like container scaling or replicas.",
+    }
+    for term, desc in glossary.items():
+        st.markdown(f"**{term}**: {desc}")
+
+if main_menu == "Workflow Simulator":
+    st.header("🚦 Module Lifecycle State")
+    item_id = st.text_input("Enter Module ID", help="Check and update the state of a specific module")
+
+    if item_id:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT item_number FROM items WHERE item_number = ?", (item_id,))
+        exists = cursor.fetchone()
+        if exists:
+            state_key = f"{item_id}_state"
+            if state_key not in st.session_state:
+                st.session_state[state_key] = "Draft"
+
+            st.markdown(f"**Current State of `{item_id}`:** `{st.session_state[state_key]}`")
+
+            if st.session_state[state_key] == "Draft":
+                if st.button("Submit for Review"):
+                    st.session_state[state_key] = "Reviewed"
+                    st.success("Moved to Reviewed state")
+
+            elif st.session_state[state_key] == "Reviewed":
+                if st.button("Approve & Release"):
+                    st.session_state[state_key] = "Released"
+                    st.success("Module is now Released ✅")
+
+            elif st.session_state[state_key] == "Released":
+                st.info("Module is fully released. 🎉")
+        else:
+            st.error("Module not found")
