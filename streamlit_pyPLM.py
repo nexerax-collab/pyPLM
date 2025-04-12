@@ -5,6 +5,17 @@ from pyPLM import (
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
+import time
+if "splash_shown" not in st.session_state:
+    splash = st.empty()
+    with splash.container():
+        st.image("pyplm_splash_cat.gif", use_column_width=True)
+        st.info("🐱 Booting PyPLM… preparing your dev toolkit.")
+        time.sleep(5)
+    splash.empty()
+    st.session_state["splash_shown"] = True
+
+
     create_database, get_db_connection, Item, BOM, ChangeRequest,
     add_item_to_db, add_change_request_to_db, load_bom_links
 )
