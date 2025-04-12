@@ -71,6 +71,7 @@ elif main_menu == "BOM Management":
             else:
                 st.error("One or both items not found")
 
+    
     elif bom_action == "Show BOM":
         item_number = st.text_input("Enter Item Number to Show BOM")
         item = bom.get_item(item_number)
@@ -78,24 +79,37 @@ elif main_menu == "BOM Management":
             st.subheader(f"BOM for {item.item_number}")
             st.markdown(f"**(Top Level)**: {item.item_number}")
             st.markdown(f"**BOM Revision:** {item.bom.revision}")
+
             if item.bom.items:
                 import pandas as pd
+                conn = get_db_connection()
+                cursor = conn.cursor()
+
                 bom_data = []
                 for idx, i_num in enumerate(item.bom.items, start=1):
+                    cursor.execute("SELECT COUNT(*) FROM items WHERE item_number = ?", (i_num,))
+                    if cursor.fetchone()[0] == 0:
+                        continue  # Skip if item not found in DB
+
                     quantity = item.bom.quantities.get(i_num, 1)
                     bom_data.append({
                         "Position": idx,
                         "Item Number": i_num,
                         "Quantity": quantity
                     })
-                bom_df = pd.DataFrame(bom_data)
-                st.dataframe(bom_df)
-                csv = bom_df.to_csv(index=False).encode("utf-8")
-                st.download_button("Download BOM as CSV", data=csv, file_name=f"BOM_{item.item_number}.csv", mime="text/csv")
+
+                if bom_data:
+                    bom_df = pd.DataFrame(bom_data)
+                    st.dataframe(bom_df)
+                    csv = bom_df.to_csv(index=False).encode("utf-8")
+                    st.download_button("Download BOM as CSV", data=csv, file_name=f"BOM_{item.item_number}.csv", mime="text/csv")
+                else:
+                    st.warning("All BOM items filtered out (not found in DB).")
             else:
                 st.info("No items in BOM.")
         else:
             st.warning("Item not found")
+
 
 # Change Management
 elif main_menu == "Change Management":
@@ -151,3 +165,41 @@ elif main_menu == "Purge Database":
                 conn.commit()
                 bom = BOM()
                 st.success("✅ Database has been purged.")
+# System Status Menu
+elif main_menu == "System Status":
+    st.header("📊 System Status")
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM items")
+        item_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM change_requests")
+        cr_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM documents")
+        doc_count = cursor.fetchone()[0]
+
+        st.metric("Total Items", item_count)
+        st.metric("Change Requests", cr_count)
+        st.metric("Documents", doc_count)
+
+        # Log preview
+        error_log = 'plm_tool.log'
+        if os.path.exists(error_log):
+            with open(error_log, "r") as log_file:
+                lines = log_file.readlines()
+                errors = [line for line in lines if "ERROR" in line]
+                recent_errors = errors[-3:] if errors else []
+                st.markdown("### Recent Errors:")
+                if recent_errors:
+                    for err in recent_errors:
+                        st.error(err.strip())
+                else:
+                    st.success("🟢 No recent errors found.")
+        else:
+            st.warning("Log file not found.")
+
+    except Exception as e:
+        st.error(f"Status check failed: {e}")
