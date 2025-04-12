@@ -307,7 +307,7 @@ if main_menu == "Interactive Tutorial":
 
     if "tutorial_step" not in st.session_state:
         st.session_state["tutorial_step"] = 1
-            st.session_state["tutorial_xp"] += 1
+    st.session_state["tutorial_xp"] += 1
         st.session_state["tutorial_item"] = None
         st.session_state["tutorial_child"] = None
 
@@ -323,7 +323,7 @@ if main_menu == "Interactive Tutorial":
             add_item_to_db(new_item)
             st.success(f"✅ Committed `{new_item.item_number}` successfully!")
             st.session_state["tutorial_step"] = 2
-            st.session_state["tutorial_xp"] += 1
+    st.session_state["tutorial_xp"] += 1
 
     elif step == 2:
         st.subheader("Step 2️⃣: Declare a Dependency")
@@ -341,7 +341,7 @@ if main_menu == "Interactive Tutorial":
             conn.commit()
             st.success(f"🔗 `{st.session_state['tutorial_child']}` linked as dependency to `{st.session_state['tutorial_item']}`")
             st.session_state["tutorial_step"] = 3
-            st.session_state["tutorial_xp"] += 1
+    st.session_state["tutorial_xp"] += 1
 
     elif step == 3:
         st.subheader("Step 3️⃣: View Dependencies")
