@@ -17,8 +17,9 @@ class BOM:
         return self.items.get(item_number, None)
 
     def add_item(self, item, quantity=1):
+        self.items[item.item_number] = item
+        self.quantities[item.item_number] = quantity
 
-    def get_item(self, item_number):
         return self.items.get(item_number, None)
         self.items[item.item_number] = item
         self.quantities[item.item_number] = quantity
@@ -93,6 +94,8 @@ def create_database():
     conn.commit()
 
 def add_item_to_db(item):
+        self.items[item.item_number] = item
+        self.quantities[item.item_number] = quantity
     conn = get_db_connection()
     conn.execute("INSERT INTO items (item_number, upper_level) VALUES (?, ?)",
                  (item.item_number,  item.upper_level.item_number if item.upper_level else None))
