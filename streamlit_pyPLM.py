@@ -69,18 +69,23 @@ if main_menu == "Change Requests":
             else:
                 st.error("Item not found")
 
+
 if main_menu == "BOM Management":
     st.header("BOM Viewer + Quantity Editor")
     selected_item = st.text_input("Enter Item Number")
     item = bom.get_item(selected_item)
     if item:
-        st.subheader(f"BOM for {item.item_number}")
-        st.markdown(f"• **{item.item_number}** (Top-level, Qty: 1)")
+        st.markdown("### Bill of Materials")
+        st.markdown(f"1. **{item.item_number}** (Top-level, Qty: 1)")
+
         if item.bom.items:
-            st.markdown("#### Edit BOM Quantities")
-            for child_id, child in item.bom.items.items():
+            st.markdown("### Linked Items")
+            for idx, (child_id, child) in enumerate(item.bom.items.items(), start=2):
                 qty = item.bom.quantities.get(child_id, 1)
-                new_qty = st.number_input(f"Qty for {child_id}", min_value=1, value=qty, key=f"qty_{child_id}")
+                st.markdown(f"{idx}. **{child_id}** — Qty: {qty}")
+
+                # Quantity Editor
+                new_qty = st.number_input(f"Edit quantity for {child_id}", min_value=1, value=qty, key=f"qty_{child_id}")
                 if st.button(f"Update Qty for {child_id}", key=f"btn_{child_id}"):
                     item.bom.change_quantity(child_id, new_qty)
                     st.success(f"Updated quantity for {child_id} to {new_qty}")
