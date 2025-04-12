@@ -45,8 +45,6 @@ if main_menu == "Module Registry":
 
     with st.form("link_form"):
         st.subheader("🔗 Declare Dependency")
-        parent = st.selectbox("Parent Module", options=available_item_ids, index=0 if available_item_ids else None), help="This is the module that will depend on another")
-        child = st.selectbox("Child Module", options=available_item_ids, index=0 if available_item_ids else None), help="This is the required module being linked")
         quantity = st.number_input("Instances Required", min_value=1, value=1, help="How many units of this module are needed?")
         submitted = st.form_submit_button("Declare Link")
         if submitted:
@@ -260,3 +258,5 @@ if main_menu == "Module Roadmap":
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
             st.markdown(f"- {item}")
+        parent = st.selectbox("Parent Module", options=available_item_ids, index=0 if available_item_ids else None, help="This is the module that will depend on another")
+        child = st.selectbox("Child Module", options=available_item_ids, index=0 if available_item_ids else None, help="This is the required module being linked")
