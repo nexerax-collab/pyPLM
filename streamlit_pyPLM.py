@@ -47,7 +47,7 @@ for item in list(bom.items.values()):
             del item.upper_level_number
 
 # System Status Menu
-elif main_menu == "System Status":
+if main_menu == "System Status":
     st.header("📊 System Status")
 
     try:
