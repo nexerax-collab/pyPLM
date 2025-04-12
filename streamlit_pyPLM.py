@@ -90,10 +90,8 @@ elif main_menu == "BOM Management":
                 conn.commit()
 
                 st.success(f"Linked {child} as child of {parent}")
-            else:
                 st.error("One or both items not found")
 
-            else:
                 st.error("One or both items not found")
 
 
@@ -131,11 +129,8 @@ elif main_menu == "BOM Management":
                     st.dataframe(bom_df)
                     csv = bom_df.to_csv(index=False).encode("utf-8")
                     st.download_button("Download BOM as CSV", data=csv, file_name=f"BOM_{item.item_number}.csv", mime="text/csv")
-                else:
                     st.warning("All BOM items filtered out (not found in DB).")
-            else:
                 st.info("No items in BOM.")
-        else:
             st.warning("Item not found")
 
 
@@ -224,9 +219,7 @@ elif main_menu == "System Status":
                 if recent_errors:
                     for err in recent_errors:
                         st.error(err.strip())
-                else:
                     st.success("🟢 No recent errors found.")
-        else:
             st.warning("Log file not found.")
 
     except Exception as e:
