@@ -71,6 +71,7 @@ elif main_menu == "BOM Management":
             child_item = bom.get_item(child)
 
             if parent_item and child_item:
+                st.success(f"Linked {child} as child of {parent}")
                 parent_item.add_lower_level_item(child_item)
 
                 # Add to parent's BOM in memory
@@ -89,10 +90,7 @@ elif main_menu == "BOM Management":
                 )
                 conn.commit()
 
-                st.success(f"Linked {child} as child of {parent}")
-                st.error("One or both items not found")
 
-                st.error("One or both items not found")
 
 
 
