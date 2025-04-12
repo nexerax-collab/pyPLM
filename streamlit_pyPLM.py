@@ -276,12 +276,6 @@ if main_menu == "Module Roadmap":
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
             st.markdown(f"- {item}")
-    parent = st.selectbox("Parent Module", options=available_item_ids)
-    if parent:
-        p = bom.get_item(parent)
-    child = st.selectbox("Child Module", options=available_item_ids)
-    if child:
-        c = bom.get_item(child)
 
 if main_menu == "PLM Resources":
     st.header("📚 Learn About PLM and Change Management")
