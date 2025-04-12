@@ -13,6 +13,9 @@ class BOM:
         self.revision = 1
         self.quantities = {}
 
+    def get_item(self, item_number):
+        return self.items.get(item_number, None)
+
     def add_item(self, item, quantity=1):
 
     def get_item(self, item_number):
