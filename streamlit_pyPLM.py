@@ -1,8 +1,12 @@
-import streamlit as st
-import sqlite3
-import os
+            from pyPLM import get_item_state, update_item_state
+            import pandas as pd
+    from collections import defaultdict
 from pyPLM import (
+import os
+import sqlite3
+import streamlit as st
 import time
+
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
@@ -124,7 +128,6 @@ if main_menu == "Dependency Viewer":
                     "Quantity": qty
                 })
 
-            import pandas as pd
             df = pd.DataFrame(data)
             st.dataframe(df, use_container_width=True)
 
@@ -228,7 +231,6 @@ if main_menu == "Workflow Simulator":
         cursor.execute("SELECT item_number FROM items WHERE item_number = ?", (item_id,))
         exists = cursor.fetchone()
         if exists:
-            from pyPLM import get_item_state, update_item_state
 
             current_state = get_item_state(item_id)
 
@@ -254,7 +256,6 @@ if main_menu == "Module Roadmap":
     cursor.execute("SELECT item_number, state FROM items")
     rows = cursor.fetchall()
 
-    from collections import defaultdict
     state_map = defaultdict(list)
     for row in rows:
         state = row["state"] or "Draft"
