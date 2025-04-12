@@ -1,13 +1,25 @@
 import streamlit as st
 import time
 import sqlite3
-from pyPLM_with_states import create_database, get_db_connection, Item, BOM, ChangeRequest, add_item_to_db, add_change_request_to_db, get_document_from_db, load_bom_links
+from pyPLM import create_database, get_db_connection, Item, BOM, ChangeRequest, add_item_to_db, add_change_request_to_db, get_document_from_db, load_bom_links
 
 st.set_page_config(page_title="PyPLM", layout="wide")
 if "splash_shown" not in st.session_state:
     st.session_state["splash_shown"] = False
 
-if not st.session_state["splash_shown"]:
+if not st.session_state.get("splash_shown", False):
+    splash = st.empty()
+    with splash.container():
+        st.markdown("### 🐾 Booting up PyPLM...")
+        st.code("""
+  |\---/|
+  | o_o |   Initializing Config Manager...
+   \_^_/    🐱 Loading Change Requests...
+""", language="text")
+        st.info("🔧 Committing Modules... Please Wait")
+        time.sleep(3)
+    splash.empty()
+    st.session_state["splash_shown"] = True
     splash = st.empty()
     with splash.container():
         st.markdown("### 🐾 Booting up PyPLM...")
@@ -18,7 +30,6 @@ if not st.session_state["splash_shown"]:
         """, language="text")
         st.info("🔧 Committing Modules... Please Wait")
         time.sleep(5)
-    splash.empty()
     st.session_state["splash_shown"] = True
 
 # Init DB + BOM
