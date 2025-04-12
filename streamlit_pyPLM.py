@@ -15,7 +15,15 @@ with col1:
     st.image("pyplm_cat_logo_small.gif", width=50)
 with col2:
     st.markdown("### PyPLM\n*Lightweight PLM for developers*", unsafe_allow_html=True)
+with col1:
+    st.image("pyplm_cat_logo_small.gif", width=50)
 
+# Add a small animated cat logo to the header
+    "<div style='display: flex; align-items: center;'>"
+    "<img src='pyplm_cat_logo_small.gif' width='50' style='margin-right: 10px'/>"
+    "<h1 style='display:inline;'>PyPLM</h1>"
+    "</div>",
+    unsafe_allow_html=True
 )
 
 import time
@@ -28,7 +36,6 @@ if "splash_shown" not in st.session_state:
     splash.empty()
     st.session_state["splash_shown"] = True
 
-st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM tool reimagined for developers</p>", unsafe_allow_html=True)
 
 create_database()
 bom = BOM()
@@ -101,7 +108,6 @@ if main_menu == "Dependency Viewer":
     item = bom.get_item(selected_item)
 
     if item:
-        st.markdown("### Dependency List (BOM View)")
         data = []
         data.append({
             "Module ID": item.item_number,
@@ -150,7 +156,6 @@ if main_menu == "System Status":
     st.metric("Patches Submitted", cr_count)
     st.metric("Documents Attached", doc_count)
 
-    st.markdown("### 📋 Recent System Logs")
     if os.path.exists("plm_tool.log"):
         with open("plm_tool.log", "r") as f:
             logs = f.readlines()[-10:]
@@ -182,7 +187,6 @@ if main_menu == "Glossary":
         "Quantity": "How many units of a module are used — think of this like container scaling or replicas.",
     }
     for term, desc in glossary.items():
-        st.markdown(f"**{term}**: {desc}")
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle State")
@@ -198,7 +202,6 @@ if main_menu == "Workflow Simulator":
             if state_key not in st.session_state:
                 st.session_state[state_key] = "Draft"
 
-            st.markdown(f"**Current State of `{item_id}`:** `{st.session_state[state_key]}`")
 
             if st.session_state[state_key] == "Draft":
                 if st.button("Submit for Review"):
@@ -229,7 +232,6 @@ if main_menu == "Workflow Simulator":
             from pyPLM import get_item_state, update_item_state
 
             current_state = get_item_state(item_id)
-            st.markdown(f"### Current State: `{current_state}`")
 
             st.progress(["Draft", "Reviewed", "Released"].index(current_state) / 2)
 
@@ -263,14 +265,10 @@ if main_menu == "Module Roadmap":
     with col1:
         st.subheader("📥 Draft")
         for item in state_map.get("Draft", []):
-            st.markdown(f"- {item}")
 
-    with col2:
         st.subheader("🔍 Reviewed")
         for item in state_map.get("Reviewed", []):
-            st.markdown(f"- {item}")
 
     with col3:
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
-            st.markdown(f"- {item}")
