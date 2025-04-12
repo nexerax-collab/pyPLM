@@ -8,6 +8,21 @@ from pyPLM import (
 )
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
+
+if "tutorial_xp" not in st.session_state:
+    st.session_state["tutorial_xp"] = 0
+if "badge" not in st.session_state:
+    st.session_state["badge"] = "🧪 Newbie Engineer"
+
+# Badge logic
+if st.session_state["tutorial_xp"] >= 3:
+    st.session_state["badge"] = "🔧 PLM Practitioner"
+if st.session_state["tutorial_xp"] >= 5:
+    st.session_state["badge"] = "🚀 PLM Pro"
+
+st.sidebar.markdown("### 🏅 Progress")
+st.sidebar.markdown(f"**Badge:** {st.session_state['badge']}")
+st.sidebar.progress(st.session_state["tutorial_xp"] / 5)
 st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM tool reimagined for developers</p>", unsafe_allow_html=True)
 
 create_database()
@@ -80,7 +95,7 @@ if main_menu == "Patch Management":
 # --- Dependency Viewer ---
 if main_menu == "Dependency Viewer":
     st.header("📦 View Dependencies")
-    selected_item = st.selectbox("Select Module to View", options=available_item_ids, index=0 if available_item_ids else None), help="View linked dependencies for this module")
+        selected_item = st.selectbox("Select Module to View", options=available_item_ids, index=0 if available_item_ids else None, help="View linked dependencies for this module")
     item = bom.get_item(selected_item)
 
     if item:
@@ -292,6 +307,7 @@ if main_menu == "Interactive Tutorial":
 
     if "tutorial_step" not in st.session_state:
         st.session_state["tutorial_step"] = 1
+            st.session_state["tutorial_xp"] += 1
         st.session_state["tutorial_item"] = None
         st.session_state["tutorial_child"] = None
 
@@ -307,6 +323,7 @@ if main_menu == "Interactive Tutorial":
             add_item_to_db(new_item)
             st.success(f"✅ Committed `{new_item.item_number}` successfully!")
             st.session_state["tutorial_step"] = 2
+            st.session_state["tutorial_xp"] += 1
 
     elif step == 2:
         st.subheader("Step 2️⃣: Declare a Dependency")
@@ -324,6 +341,7 @@ if main_menu == "Interactive Tutorial":
             conn.commit()
             st.success(f"🔗 `{st.session_state['tutorial_child']}` linked as dependency to `{st.session_state['tutorial_item']}`")
             st.session_state["tutorial_step"] = 3
+            st.session_state["tutorial_xp"] += 1
 
     elif step == 3:
         st.subheader("Step 3️⃣: View Dependencies")
