@@ -1,9 +1,10 @@
-st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
-
 import streamlit as st
 import sqlite3
 import os
 from pyPLM import (
+
+st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
+
     create_database, get_db_connection, Item, BOM, ChangeRequest,
     add_item_to_db, add_change_request_to_db, load_bom_links
 )
