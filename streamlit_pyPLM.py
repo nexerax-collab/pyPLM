@@ -35,14 +35,10 @@ for item in list(bom.items.values()):
     if item.upper_level_number:
         parent = bom.get_item(getattr(item, 'upper_level_number', None))
         if parent:
-        if parent:
             item.upper_level = parent
-        if parent:
             parent.bom.add_item(item)
             parent.add_lower_level_item(item)
-            pass
-        del item.upper_level_number
-
+            del item.upper_level_number
 main_menu = st.sidebar.selectbox("Main Menu", [
     "Item Management", "BOM Management", "Change Management", "Document Management", "System Status", "Purge Database"
 ])
