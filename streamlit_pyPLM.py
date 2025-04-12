@@ -9,6 +9,13 @@ from pyPLM import (
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
+# ✅ Show logo using Streamlit-native image layout
+col1, col2 = st.columns([1, 10])
+with col1:
+    st.image("pyplm_cat_logo_small.gif", width=50)
+with col2:
+    st.markdown("## PyPLM")
+
 # Add a small animated cat logo to the header
 st.markdown(
     "<div style='display: flex; align-items: center;'>"
