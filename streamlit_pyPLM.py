@@ -13,6 +13,12 @@ st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM to
 create_database()
 bom = BOM()
 
+
+conn = get_db_connection()
+cursor = conn.cursor()
+cursor.execute("SELECT item_number FROM items")
+available_item_ids = [row["item_number"] for row in cursor.fetchall()]
+
 conn = get_db_connection()
 cursor = conn.cursor()
 cursor.execute("SELECT * FROM items")
@@ -39,8 +45,8 @@ if main_menu == "Module Registry":
 
     with st.form("link_form"):
         st.subheader("🔗 Declare Dependency")
-        parent = st.text_input("Parent Module ID", help="This is the module that will depend on another")
-        child = st.text_input("Child Module ID", help="This is the required module being linked")
+        parent = st.selectbox("Parent Module", options=available_item_ids, index=0 if available_item_ids else None), help="This is the module that will depend on another")
+        child = st.selectbox("Child Module", options=available_item_ids, index=0 if available_item_ids else None), help="This is the required module being linked")
         quantity = st.number_input("Instances Required", min_value=1, value=1, help="How many units of this module are needed?")
         submitted = st.form_submit_button("Declare Link")
         if submitted:
@@ -56,7 +62,7 @@ if main_menu == "Module Registry":
 if main_menu == "Patch Management":
     st.header("Pull Request (Patch) Tracker")
     with st.form("cr_form"):
-        item_number = st.text_input("Module ID", help="Enter the module you're applying the patch to (e.g., P0003)")
+        item_number = st.selectbox("Select Module to Patch", options=available_item_ids, index=0 if available_item_ids else None), help="Enter the module you're applying the patch to (e.g., P0003)")
         reason = st.selectbox("Patch Type", [
             "A - Feature Request",
             "B - Refactor",
@@ -77,7 +83,7 @@ if main_menu == "Patch Management":
 # --- Dependency Viewer ---
 if main_menu == "Dependency Viewer":
     st.header("📦 View Dependencies")
-    selected_item = st.text_input("Enter Module ID", help="View linked dependencies for this module")
+    selected_item = st.selectbox("Select Module to View", options=available_item_ids, index=0 if available_item_ids else None), help="View linked dependencies for this module")
     item = bom.get_item(selected_item)
 
     if item:
@@ -166,7 +172,7 @@ if main_menu == "Glossary":
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle State")
-    item_id = st.text_input("Enter Module ID", help="Check and update the state of a specific module")
+    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None), help="Check and update the state of a specific module")
 
     if item_id:
         conn = get_db_connection()
@@ -198,7 +204,7 @@ if main_menu == "Workflow Simulator":
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle Tracker")
-    item_id = st.text_input("Enter Module ID", help="Check and update the lifecycle stage")
+    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None), help="Check and update the lifecycle stage")
 
     if item_id:
         conn = get_db_connection()
