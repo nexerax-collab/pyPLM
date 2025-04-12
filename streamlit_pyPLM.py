@@ -47,6 +47,10 @@ for item in list(bom.items.values()):
             del item.upper_level_number
 
 # System Status Menu
+main_menu = st.sidebar.selectbox("Main Menu", [
+    "Item Management", "BOM Management", "Change Management", "Document Management", "System Status", "Purge Database"
+])
+
 if main_menu == "System Status":
     st.header("📊 System Status")
 
