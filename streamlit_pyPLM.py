@@ -1,12 +1,15 @@
-
 import streamlit as st
 import sqlite3
 import os
 from pyPLM import (
+import time
+
+st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
+
+
     create_database, get_db_connection, Item, BOM, ChangeRequest,
     add_item_to_db, add_change_request_to_db, load_bom_links
 
-st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
 # ✅ Show logo using Streamlit-native image layout
 col1, col2 = st.columns([1, 10])
@@ -24,7 +27,6 @@ with col1:
     "</div>",
     unsafe_allow_html=True
 
-import time
 if "splash_shown" not in st.session_state:
     splash = st.empty()
     with splash.container():
