@@ -49,29 +49,6 @@ if main_menu == "Item Management":
             item = Item()
             bom.add_item(item)
             add_item_to_db(item)
-    elif action == "Link Items":
-        p = st.text_input("Parent Item")
-        c = st.text_input("Child Item")
-        if st.button("Link"):
-            parent = bom.get_item(p)
-            child = bom.get_item(c)
-            if parent and child:
-                parent.add_lower_level_item(child)
-            else:
-                st.error("One or both items not found")
-    elif action == "Show BOM":
-        target = st.text_input("Item to show BOM")
-        item = bom.get_item(target)
-        if item:
-            st.write(f"BOM for {item.item_number}")
-            for i_num, child in item.bom.items.items():
-                qty = item.bom.quantities.get(i_num, 1)
-                st.markdown(f"- {i_num} (Qty: {qty}, )")
-                st.markdown(f"- {child.item_number} (Rev {child.revision})")
-        else:
-            st.warning("Item not found")
-
-# Change Management
 elif main_menu == "Change Management":
     st.header("Change Management")
     act = st.radio("Change Options", ["Create CR", "Update Status", "Show by Item", "Show All"])
