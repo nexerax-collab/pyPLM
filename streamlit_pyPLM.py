@@ -95,7 +95,7 @@ if main_menu == "Patch Management":
 # --- Dependency Viewer ---
 if main_menu == "Dependency Viewer":
     st.header("📦 View Dependencies")
-        selected_item = st.selectbox("Select Module to View", options=available_item_ids, index=0 if available_item_ids else None, help="View linked dependencies for this module")
+    selected_item = st.selectbox("Select Module to View", options=available_item_ids, index=0 if available_item_ids else None, help="View linked dependencies for this module")
     item = bom.get_item(selected_item)
 
     if item:
