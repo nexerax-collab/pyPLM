@@ -4,7 +4,7 @@ import sqlite3
 import os
 from pyPLM import (
     create_database, get_db_connection, Item, BOM, ChangeRequest,
-    add_item_to_db, add_change_request_to_db
+    add_item_to_db, add_change_request_to_db, load_bom_links
 )
 
 st.set_page_config(page_title="PyPLM", layout="wide")
@@ -19,14 +19,10 @@ cursor.execute("SELECT * FROM items")
 for row in cursor.fetchall():
     item = Item()
     item.item_number = row["item_number"]
-    if row["upper_level"]:
-        item.upper_level_number = row["upper_level"]
-        parent = bom.get_item(item.upper_level_number)
-        if parent:
-            item.upper_level = parent
-            parent.bom.add_item(item)
-            parent.add_lower_level_item(item)
     bom.add_item(item)
+
+# Now load BOM links
+load_bom_links(bom)
 
 main_menu = st.sidebar.selectbox("Menu", ["Item Management", "Change Requests", "BOM Management", "System Status", "Purge DB"])
 
@@ -69,7 +65,6 @@ if main_menu == "Change Requests":
             else:
                 st.error("Item not found")
 
-
 if main_menu == "BOM Management":
     st.header("BOM Viewer + Quantity Editor")
     selected_item = st.text_input("Enter Item Number")
@@ -84,7 +79,6 @@ if main_menu == "BOM Management":
                 qty = item.bom.quantities.get(child_id, 1)
                 st.markdown(f"{idx}. **{child_id}** — Qty: {qty}")
 
-                # Quantity Editor
                 new_qty = st.number_input(f"Edit quantity for {child_id}", min_value=1, value=qty, key=f"qty_{child_id}")
                 if st.button(f"Update Qty for {child_id}", key=f"btn_{child_id}"):
                     item.bom.change_quantity(child_id, new_qty)
@@ -125,5 +119,6 @@ if main_menu == "Purge DB":
         c.execute("DELETE FROM items")
         c.execute("DELETE FROM change_requests")
         c.execute("DELETE FROM documents")
+        c.execute("DELETE FROM bom_links")
         conn.commit()
         st.success("Database purged.")
