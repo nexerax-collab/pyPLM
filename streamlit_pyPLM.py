@@ -203,6 +203,51 @@ elif main_menu == "Purge Database":
                 conn.commit()
                 st.success("✅ Database has been purged.")
                 bom = BOM()
+
+elif main_menu == "BOM Management":
+    st.subheader("BOM Functions")
+    bom_action = st.radio("BOM Options", ["Link Items", "Show BOM"])
+
+    if bom_action == "Link Items":
+        parent = st.text_input("Parent Item Number")
+        child = st.text_input("Child Item Number")
+        if st.button("Link"):
+            parent_item = bom.get_item(parent)
+            child_item = bom.get_item(child)
+            if parent_item and child_item:
+                parent_item.add_lower_level_item(child_item)
+                st.success(f"Linked {child} as child of {parent}")
+            else:
+                st.error("One or both items not found")
+
+    elif bom_action == "Show BOM":
+        item_number = st.text_input("Enter Item Number to Show BOM")
+        item = bom.get_item(item_number)
+        if item:
+            st.subheader(f"BOM for {item.item_number}")
+            st.markdown(f"**(Top Level)**: {item.item_number}")
+            st.markdown(f"**BOM Revision:** {item.bom.revision}")
+
+            if item.bom.items:
+                import pandas as pd
+                bom_data = []
+                for idx, i_num in enumerate(item.bom.items, start=1):
+                    quantity = item.bom.quantities.get(i_num, 1)
+                    bom_data.append({
+                        "Position": idx,
+                        "Item Number": i_num,
+                        "Quantity": quantity
+                    })
+                bom_df = pd.DataFrame(bom_data)
+                st.dataframe(bom_df)
+
+                csv = bom_df.to_csv(index=False).encode("utf-8")
+                st.download_button("Download BOM as CSV", data=csv, file_name=f"BOM_{item.item_number}.csv", mime="text/csv")
+
+            else:
+                st.info("No items in BOM.")
+        else:
+            st.warning("Item not found")
 elif main_menu == "User Management":
     st.subheader("Add new user (coming soon)")
 
