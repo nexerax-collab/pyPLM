@@ -8,45 +8,10 @@ from pyPLM import (
 )
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
-if "splash_shown" not in st.session_state:
-    splash = st.empty()
-    with splash.container():
-        st.markdown("### 🐾 Booting PyPLM...")
-        st.code("""
-  |\---/|
-  | o_o |   Initializing Config Manager...
-   \_^_/    🐱 Loading Modules...
-""")
-        st.info("🔧 Committing Modules...")
-        time.sleep(3)
-    splash.empty()
-    st.session_state["splash_shown"] = True
-
-
-if "tutorial_xp" not in st.session_state:
-    st.session_state["tutorial_xp"] = 0
-if "badge" not in st.session_state:
-    st.session_state["badge"] = "🧪 Newbie Engineer"
-
-# Badge logic
-if st.session_state["tutorial_xp"] >= 3:
-    st.session_state["badge"] = "🔧 PLM Practitioner"
-if st.session_state["tutorial_xp"] >= 5:
-    st.session_state["badge"] = "🚀 PLM Pro"
-
-st.sidebar.markdown("### 🏅 Progress")
-st.sidebar.markdown(f"**Badge:** {st.session_state['badge']}")
-st.sidebar.progress(st.session_state["tutorial_xp"] / 5)
 st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM tool reimagined for developers</p>", unsafe_allow_html=True)
 
 create_database()
 bom = BOM()
-
-
-conn = get_db_connection()
-cursor = conn.cursor()
-cursor.execute("SELECT item_number FROM items")
-available_item_ids = [row["item_number"] for row in cursor.fetchall()]
 
 conn = get_db_connection()
 cursor = conn.cursor()
@@ -74,13 +39,13 @@ if main_menu == "Module Registry":
 
     with st.form("link_form"):
         st.subheader("🔗 Declare Dependency")
+        parent = st.text_input("Parent Module ID", help="This is the module that will depend on another")
+        child = st.text_input("Child Module ID", help="This is the required module being linked")
         quantity = st.number_input("Instances Required", min_value=1, value=1, help="How many units of this module are needed?")
         submitted = st.form_submit_button("Declare Link")
         if submitted:
-        p = bom.get_item(parent)
-        p = bom.get_item(parent)
-        c = bom.get_item(child)
-        c = bom.get_item(child)
+            p = bom.get_item(parent)
+            c = bom.get_item(child)
             if p and c:
                 p.add_lower_level_item(c, quantity)
                 st.success(f"🔗 `{child}` linked as dependency to `{parent}` (Qty: {quantity})")
@@ -91,6 +56,7 @@ if main_menu == "Module Registry":
 if main_menu == "Patch Management":
     st.header("Pull Request (Patch) Tracker")
     with st.form("cr_form"):
+        item_number = st.text_input("Module ID", help="Enter the module you're applying the patch to (e.g., P0003)")
         reason = st.selectbox("Patch Type", [
             "A - Feature Request",
             "B - Refactor",
@@ -111,7 +77,7 @@ if main_menu == "Patch Management":
 # --- Dependency Viewer ---
 if main_menu == "Dependency Viewer":
     st.header("📦 View Dependencies")
-    selected_item = st.selectbox("Select Module to View", options=available_item_ids, index=0 if available_item_ids else None, help="View linked dependencies for this module")
+    selected_item = st.text_input("Enter Module ID", help="View linked dependencies for this module")
     item = bom.get_item(selected_item)
 
     if item:
@@ -200,7 +166,7 @@ if main_menu == "Glossary":
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle State")
-    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None, help="Check and update the state of a specific module")
+    item_id = st.text_input("Enter Module ID", help="Check and update the state of a specific module")
 
     if item_id:
         conn = get_db_connection()
@@ -232,7 +198,7 @@ if main_menu == "Workflow Simulator":
 
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle Tracker")
-    item_id = st.selectbox("Select Module ID", options=available_item_ids, index=0 if available_item_ids else None, help="Check and update the state of a specific module")
+    item_id = st.text_input("Enter Module ID", help="Check and update the lifecycle stage")
 
     if item_id:
         conn = get_db_connection()
@@ -288,71 +254,3 @@ if main_menu == "Module Roadmap":
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
             st.markdown(f"- {item}")
-
-if main_menu == "PLM Resources":
-    st.header("📚 Learn About PLM and Change Management")
-
-    st.markdown("### 🔧 Why Change Management?")
-    st.markdown("""
-- Helps ensure changes are **reviewed**, **approved**, and **tracked**
-- Avoids costly mistakes by improving **traceability**
-- Essential in regulated industries (aerospace, automotive, pharma)
-- Aligns stakeholders and teams — reduces miscommunication
-    """)
-
-    st.markdown("### 🧠 Core Concepts")
-    st.markdown("""
-- **Item (Module):** A component or unit in a system
-- **Change Request:** A formal proposal to change a design/module
-- **Bill of Materials (BOM):** List of all components a system depends on
-- **Revision:** Controlled versioning of items/modules
-- **Lifecycle:** Stages an item goes through (e.g. Draft → Reviewed → Released)
-    """)
-
-    st.markdown("### 📘 External Resources")
-    st.markdown("- [Intro to PLM (Dassault Systems)](https://www.3ds.com/solutions/plm/what-is-plm/)")
-    st.markdown("- [PLM 101 by Arena](https://www.arenasolutions.com/resources/plm/plm-101/)")
-    st.markdown("- [Change Management in Engineering (Wikipedia)](https://en.wikipedia.org/wiki/Engineering_change_order)")
-    st.markdown("- [What is a BOM?](https://www.coupa.com/blog/procurement/what-bill-materials-bom)")
-    st.markdown("- [PLM vs. ERP](https://www.autodesk.com/products/fusion-360/blog/plm-vs-erp/)")
-
-if main_menu == "Interactive Tutorial":
-    st.header("👾 Dev-Onboarding: Build Your First Module")
-    if "tutorial_step" not in st.session_state:
-        st.session_state["tutorial_step"] = 1
-        st.session_state["tutorial_item"] = None
-        st.session_state["tutorial_child"] = None
-    step = st.session_state["tutorial_step"]
-    if step == 1:
-        st.subheader("Step 1️⃣: Commit a New Module")
-        if st.button("🧱 Commit Module"):
-            from pyPLM import Item, add_item_to_db
-            new_item = Item()
-            st.session_state["tutorial_item"] = new_item.item_number
-            add_item_to_db(new_item)
-            st.success(f"✅ Committed `{new_item.item_number}` successfully!")
-            st.session_state["tutorial_step"] = 2
-            st.session_state["tutorial_xp"] += 1
-    elif step == 2:
-        st.subheader("Step 2️⃣: Declare a Dependency")
-        from pyPLM import Item, add_item_to_db, get_db_connection
-        new_child = Item()
-        st.session_state["tutorial_child"] = new_child.item_number
-        add_item_to_db(new_child)
-        st.success(f"✅ Added `{new_child.item_number}` as a potential dependency.")
-        if st.button("🔗 Link It"):
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO bom_links (parent_item, child_item, quantity) VALUES (?, ?, ?)",
-                           (st.session_state["tutorial_item"], st.session_state["tutorial_child"], 1))
-            conn.commit()
-            st.success(f"🔗 `{st.session_state['tutorial_child']}` linked to `{st.session_state['tutorial_item']}`")
-            st.session_state["tutorial_step"] = 3
-            st.session_state["tutorial_xp"] += 1
-    elif step == 3:
-        st.subheader("Step 3️⃣: View Dependencies")
-        st.info("✅ You’ve completed the basics. Use the menu to explore your modules, create patches, or advance workflows.")
-        if st.button("🏁 Finish Tutorial"):
-            st.session_state["tutorial_step"] = 1
-            st.session_state["tutorial_xp"] += 1
-            st.success("🎉 Done! You’re ready to explore the PLM world like a dev pro.")
