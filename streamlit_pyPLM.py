@@ -194,3 +194,63 @@ if main_menu == "Workflow Simulator":
                 st.info("Module is fully released. 🎉")
         else:
             st.error("Module not found")
+
+
+if main_menu == "Workflow Simulator":
+    st.header("🚦 Module Lifecycle Tracker")
+    item_id = st.text_input("Enter Module ID", help="Check and update the lifecycle stage")
+
+    if item_id:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT item_number FROM items WHERE item_number = ?", (item_id,))
+        exists = cursor.fetchone()
+        if exists:
+            from pyPLM import get_item_state, update_item_state
+
+            current_state = get_item_state(item_id)
+            st.markdown(f"### Current State: `{current_state}`")
+
+            st.progress(["Draft", "Reviewed", "Released"].index(current_state) / 2)
+
+            if current_state == "Draft":
+                if st.button("▶ Submit for Review"):
+                    update_item_state(item_id, "Reviewed")
+                    st.success("State updated to Reviewed ✅")
+            elif current_state == "Reviewed":
+                if st.button("✅ Approve & Release"):
+                    update_item_state(item_id, "Released")
+                    st.success("State updated to Released 🎉")
+            elif current_state == "Released":
+                st.info("This module is fully released.")
+        else:
+            st.error("Module not found.")
+
+if main_menu == "Module Roadmap":
+    st.header("🗺️ Module Roadmap by State")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT item_number, state FROM items")
+    rows = cursor.fetchall()
+
+    from collections import defaultdict
+    state_map = defaultdict(list)
+    for row in rows:
+        state = row["state"] or "Draft"
+        state_map[state].append(row["item_number"])
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.subheader("📥 Draft")
+        for item in state_map.get("Draft", []):
+            st.markdown(f"- {item}")
+
+    with col2:
+        st.subheader("🔍 Reviewed")
+        for item in state_map.get("Reviewed", []):
+            st.markdown(f"- {item}")
+
+    with col3:
+        st.subheader("✅ Released")
+        for item in state_map.get("Released", []):
+            st.markdown(f"- {item}")
