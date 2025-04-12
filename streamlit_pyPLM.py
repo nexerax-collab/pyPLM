@@ -1,3 +1,4 @@
+st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
 import streamlit as st
 import sqlite3
@@ -7,7 +8,6 @@ from pyPLM import (
     add_item_to_db, add_change_request_to_db, load_bom_links
 )
 
-st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
 if "splash_shown" not in st.session_state:
     splash = st.empty()
@@ -24,7 +24,6 @@ if "splash_shown" not in st.session_state:
     splash.empty()
     st.session_state["splash_shown"] = True
 
-st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 st.markdown("<h1 style='color:#34a853;'>PyPLM (Dev Mode)</h1><p>🛠️ A PLM tool reimagined for developers</p>", unsafe_allow_html=True)
 
 create_database()
