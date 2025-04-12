@@ -49,7 +49,6 @@ if main_menu == "Item Management":
             item = Item()
             bom.add_item(item)
             add_item_to_db(item)
-            st.success(f"Created Item {item.item_number}")
     elif action == "Link Items":
         p = st.text_input("Parent Item")
         c = st.text_input("Child Item")
@@ -58,7 +57,6 @@ if main_menu == "Item Management":
             child = bom.get_item(c)
             if parent and child:
                 parent.add_lower_level_item(child)
-                st.success(f"Linked {c} under {p}")
             else:
                 st.error("One or both items not found")
     elif action == "Show BOM":
@@ -96,10 +94,11 @@ elif main_menu == "Change Management":
     "D - > 10k"
 ])
             cost_value = {"A": "1", "B": "5", "C": "10", "D": "15"}[cost[0]]
-            if reason and cost.replace(".", "", 1).isdigit():
+            if st.button("Create Change Request"):
                 cr = item.create_change_request(reason[0], cost_value, timeline_impact="< 2 weeks")
                 add_change_request_to_db(cr)
-                st.success(f"CR#{cr.change_request_number} created")
+                st.success(f"Created CR#{cr.change_request_number} for {item.item_number}")
+            if reason and cost.replace(".", "", 1).isdigit():
             else:
                 st.warning("Reason and cost required.")
         else:
@@ -110,7 +109,6 @@ elif main_menu == "Change Management":
         conn = get_db_connection()
         conn.execute("UPDATE change_requests SET status = ? WHERE change_request_number = ?", (new, cr_num))
         conn.commit()
-        st.success(f"CR#{cr_num} updated")
     elif act == "Show by Item":
         conn = get_db_connection()
         items = [row[0] for row in conn.execute("SELECT item_number FROM items").fetchall()]
@@ -164,7 +162,6 @@ elif main_menu == "BOM Management":
                     parent_item.bom.quantities = {}
                 parent_item.add_lower_level_item(child_item)
                 parent_item.bom.quantities[child_item.item_number] = quantity
-                st.success(f"Linked {child_item.item_number} to {parent_item.item_number} with qty {quantity}")
             else:
                 st.error("One or both items not found")
     elif bom_action == "Remove Item":
@@ -175,7 +172,6 @@ elif main_menu == "BOM Management":
             if parent_item and child in [c.item_number for c in parent_item.lower_level]:
                 parent_item.lower_level = [c for c in parent_item.lower_level if c.item_number != child]
                 parent_item.bom.quantities.pop(child, None)
-                st.success(f"Removed {child} from {parent}")
             else:
                 st.warning("Link not found")
     elif bom_action == "Change Quantity":
@@ -186,7 +182,6 @@ elif main_menu == "BOM Management":
             parent_item = bom.get_item(parent)
             if parent_item and child in parent_item.bom.quantities:
                 parent_item.bom.quantities[child] = quantity
-                st.success(f"Updated quantity of {child} in {parent} BOM to {quantity}")
             else:
                 st.warning("Item not found in BOM")
     elif bom_action == "Increment BOM Revision":
@@ -196,7 +191,6 @@ elif main_menu == "BOM Management":
         item = bom.get_item(item_number)
         if item:
             item.bom.increment_revision()
-            st.success(f"BOM revision incremented to {item.bom.revision}")
         else:
             st.warning("Item not found")
 
@@ -209,7 +203,6 @@ elif main_menu == "Purge Database":
                 for table in ["items", "change_requests", "documents"]:
                     conn.execute(f"DELETE FROM {table}")
                 conn.commit()
-                st.success("Database purged.")
 
 elif main_menu == "User Management":
     st.subheader("Add new user (coming soon)")
