@@ -98,9 +98,6 @@ elif main_menu == "Change Management":
                 cr = item.create_change_request(reason[0], cost_value, timeline_impact="< 2 weeks")
                 add_change_request_to_db(cr)
                 st.success(f"Created CR#{cr.change_request_number} for {item.item_number}")
-            if reason and cost.replace(".", "", 1).isdigit():
-            else:
-                st.warning("Reason and cost required.")
         else:
             st.warning("Item not found")
     elif act == "Update Status":
