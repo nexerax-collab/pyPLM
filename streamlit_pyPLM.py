@@ -87,6 +87,48 @@ if main_menu == "BOM Management":
             st.markdown(f"**(Top Level)**: {item.item_number}")
             st.markdown(f"**BOM Revision:** {item.bom.revision}")
             if item.bom.items:
+
+                import pandas as pd
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                bom_data = []
+
+                # Include the top-level item itself
+                bom_data.append({
+                    "Position": 0,
+                    "Item Number": item.item_number,
+                    "Quantity": 1
+                })
+
+                for idx, i_num in enumerate(item.bom.items, start=1):
+                    cursor.execute("SELECT COUNT(*) FROM items WHERE item_number = ?", (i_num,))
+                    if cursor.fetchone()[0] == 0:
+                        continue
+                    quantity = item.bom.quantities.get(i_num, 1)
+                    bom_data.append({
+                        "Position": idx,
+                        "Item Number": i_num,
+                        "Quantity": quantity
+                    })
+
+                if bom_data:
+                    st.markdown("### Edit BOM Quantities")
+                    for row in bom_data[1:]:  # skip top-level item
+                        new_qty = st.number_input(
+                            f"Qty for {row['Item Number']}",
+                            min_value=1,
+                            step=1,
+                            value=row['Quantity'],
+                            key="qty_" + row["Item Number"]
+                        )
+                        if st.button(f"Update Quantity for {row['Item Number']}", key="btn_" + row["Item Number"]):
+                            item.bom.change_quantity(row["Item Number"], new_qty)
+                            st.success(f"Updated quantity for {row['Item Number']} to {new_qty}")
+
+                    bom_df = pd.DataFrame(bom_data)
+                    st.dataframe(bom_df, use_container_width=True)
+                else:
+                    st.warning("All BOM items filtered out (not found in DB).")
                 import pandas as pd
                 conn = get_db_connection()
                 cursor = conn.cursor()
