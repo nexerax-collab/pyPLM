@@ -1,7 +1,11 @@
+
 import streamlit as st
 import sqlite3
 import os
 from pyPLM import (
+    create_database, get_db_connection, Item, BOM, ChangeRequest,
+    add_item_to_db, add_change_request_to_db, load_bom_links
+)
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
@@ -12,27 +16,6 @@ if "splash_shown" not in st.session_state:
         st.image("pyplm_splash_cat.gif", use_column_width=True)
         st.info("🐱 Booting PyPLM… preparing your dev toolkit.")
         time.sleep(5)
-    splash.empty()
-    st.session_state["splash_shown"] = True
-
-
-    create_database, get_db_connection, Item, BOM, ChangeRequest,
-    add_item_to_db, add_change_request_to_db, load_bom_links
-)
-
-
-if "splash_shown" not in st.session_state:
-    splash = st.empty()
-    with splash.container():
-        st.markdown("### 🐾 Welcome to PyPLM")
-        st.code("""
-  |\---/|
-  | o_o |   Initializing PLM for Developers...
-   \_^_/    🐱 Loading Your Modules...
-""")
-        st.info("Hang tight, we're getting your system ready!")
-        import time
-        time.sleep(3)
     splash.empty()
     st.session_state["splash_shown"] = True
 
@@ -282,12 +265,3 @@ if main_menu == "Module Roadmap":
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
             st.markdown(f"- {item}")
-
-if main_menu == "Resources":
-    st.header("📚 PLM Knowledge Portal")
-    st.markdown("### 💡 What is PLM?")
-    st.write("Product Lifecycle Management (PLM) is the backbone of managing changes, modules, and dependencies in engineering and dev environments.")
-    st.markdown("- [🧠 Wikipedia - Change Management](https://en.wikipedia.org/wiki/Change_management)")
-    st.markdown("- [🔗 Aras PLM](https://www.aras.com/)")
-    st.markdown("- [🔧 Dassault Systèmes 3DEXPERIENCE](https://www.3ds.com/)")
-    st.markdown("- [📘 GitHub: pyPLM Project](https://github.com/nexerax-collab/pyPLM)")
