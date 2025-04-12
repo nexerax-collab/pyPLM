@@ -1,77 +1,4 @@
 
-# --- Tutorial ---
-if main_menu == "Interactive Tutorial":
-    st.header("👾 Dev-Onboarding: Build Your First Module")
-    if "tutorial_step" not in st.session_state:
-        st.session_state["tutorial_step"] = 1
-        st.session_state["tutorial_xp"] = 0
-        st.session_state["tutorial_item"] = None
-        st.session_state["tutorial_child"] = None
-
-    step = st.session_state["tutorial_step"]
-
-    if step == 1:
-        st.subheader("Step 1️⃣: Commit a New Module")
-        st.markdown("In PLM, a module is like a component. You’ll start by committing your first one.")
-        if st.button("🧱 Commit Module"):
-            from pyPLM import Item, add_item_to_db
-            new_item = Item()
-            st.session_state["tutorial_item"] = new_item.item_number
-            add_item_to_db(new_item)
-            st.success(f"✅ Committed `{new_item.item_number}` successfully!")
-            st.session_state["tutorial_step"] = 2
-            st.session_state["tutorial_xp"] += 1
-
-    elif step == 2:
-        st.subheader("Step 2️⃣: Declare a Dependency")
-        st.markdown("This simulates adding a module dependency. It's similar to linking a library.")
-        from pyPLM import Item, add_item_to_db, get_db_connection
-        new_child = Item()
-        st.session_state["tutorial_child"] = new_child.item_number
-        add_item_to_db(new_child)
-        st.success(f"✅ Added `{new_child.item_number}` as a potential dependency.")
-        if st.button("🔗 Link It"):
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO bom_links (parent_item, child_item, quantity) VALUES (?, ?, ?)",
-                           (st.session_state["tutorial_item"], st.session_state["tutorial_child"], 1))
-            conn.commit()
-            st.success(f"🔗 Linked `{st.session_state['tutorial_child']}` to `{st.session_state['tutorial_item']}`")
-            st.session_state["tutorial_step"] = 3
-            st.session_state["tutorial_xp"] += 1
-
-    elif step == 3:
-        st.subheader("Step 3️⃣: View Dependencies")
-        st.info("✅ You’ve completed the basics. Use the menu to explore your modules, create patches, or advance workflows.")
-        if st.button("🏁 Finish Tutorial"):
-            st.session_state["tutorial_step"] = 1
-            st.session_state["tutorial_xp"] += 1
-            st.success("🎉 Done! You’re ready to explore the PLM world like a dev pro.")
-
-# --- PLM Resources ---
-elif main_menu == "PLM Resources":
-    st.header("📚 PLM Knowledge Hub")
-    st.markdown("""
-    This section helps devs understand core Product Lifecycle Management (PLM) principles:
-
-    - **Item**: A modular asset (like a component or service).
-    - **Change Request**: A proposed modification to an item/module.
-    - **BOM (Bill of Materials)**: A structured dependency tree.
-    - **States**: Lifecycle transitions (e.g., Draft → Approved).
-    - **Traceability**: Who changed what, why, and when.
-
-    ### Why Use Change Management?
-    Just like Git:
-    - It prevents chaos
-    - Keeps product structure consistent
-    - Tracks decisions
-    - Enables collaboration
-
-    Learn more:
-    - [Intro to PLM](https://www.autodesk.com/solutions/plm/what-is-plm)
-    - [Why Engineers Use BOMs](https://www.arenasolutions.com/resources/articles/what-is-bom/)
-    """)
-
 import streamlit as st
 import sqlite3
 import os
@@ -136,10 +63,8 @@ if main_menu == "Module Registry":
         quantity = st.number_input("Instances Required", min_value=1, value=1, help="How many units of this module are needed?")
         submitted = st.form_submit_button("Declare Link")
         if submitted:
-    if parent:
         p = bom.get_item(parent)
         p = bom.get_item(parent)
-    if child:
         c = bom.get_item(child)
         c = bom.get_item(child)
             if p and c:
