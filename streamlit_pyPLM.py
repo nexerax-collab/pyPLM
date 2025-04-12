@@ -194,13 +194,15 @@ elif main_menu == "BOM Management":
 # Admin Sections
 elif main_menu == "Purge Database":
     if st.session_state.role == "admin":
-        if st.checkbox("Yes, I understand"):
+        st.header("⚠️ Purge Entire Database")
+        if st.checkbox("Yes, I understand this will delete all data."):
             if st.button("Purge"):
                 conn = get_db_connection()
                 for table in ["items", "change_requests", "documents"]:
                     conn.execute(f"DELETE FROM {table}")
                 conn.commit()
-
+                st.success("✅ Database has been purged.")
+                bom = BOM()
 elif main_menu == "User Management":
     st.subheader("Add new user (coming soon)")
 
