@@ -60,7 +60,6 @@ if main_menu == "Module Registry":
 if main_menu == "Patch Management":
     st.header("Pull Request (Patch) Tracker")
     with st.form("cr_form"):
-        item_number = st.selectbox("Select Module to Patch", options=available_item_ids, index=0 if available_item_ids else None), help="Enter the module you're applying the patch to (e.g., P0003)")
         reason = st.selectbox("Patch Type", [
             "A - Feature Request",
             "B - Refactor",
@@ -260,3 +259,76 @@ if main_menu == "Module Roadmap":
             st.markdown(f"- {item}")
         parent = st.selectbox("Parent Module", options=available_item_ids, index=0 if available_item_ids else None, help="This is the module that will depend on another")
         child = st.selectbox("Child Module", options=available_item_ids, index=0 if available_item_ids else None, help="This is the required module being linked")
+
+if main_menu == "PLM Resources":
+    st.header("📚 Learn About PLM and Change Management")
+
+    st.markdown("### 🔧 Why Change Management?")
+    st.markdown("""
+- Helps ensure changes are **reviewed**, **approved**, and **tracked**
+- Avoids costly mistakes by improving **traceability**
+- Essential in regulated industries (aerospace, automotive, pharma)
+- Aligns stakeholders and teams — reduces miscommunication
+    """)
+
+    st.markdown("### 🧠 Core Concepts")
+    st.markdown("""
+- **Item (Module):** A component or unit in a system
+- **Change Request:** A formal proposal to change a design/module
+- **Bill of Materials (BOM):** List of all components a system depends on
+- **Revision:** Controlled versioning of items/modules
+- **Lifecycle:** Stages an item goes through (e.g. Draft → Reviewed → Released)
+    """)
+
+    st.markdown("### 📘 External Resources")
+    st.markdown("- [Intro to PLM (Dassault Systems)](https://www.3ds.com/solutions/plm/what-is-plm/)")
+    st.markdown("- [PLM 101 by Arena](https://www.arenasolutions.com/resources/plm/plm-101/)")
+    st.markdown("- [Change Management in Engineering (Wikipedia)](https://en.wikipedia.org/wiki/Engineering_change_order)")
+    st.markdown("- [What is a BOM?](https://www.coupa.com/blog/procurement/what-bill-materials-bom)")
+    st.markdown("- [PLM vs. ERP](https://www.autodesk.com/products/fusion-360/blog/plm-vs-erp/)")
+
+if main_menu == "Interactive Tutorial":
+    st.header("👾 Dev-Onboarding: Build Your First Module")
+
+    if "tutorial_step" not in st.session_state:
+        st.session_state["tutorial_step"] = 1
+        st.session_state["tutorial_item"] = None
+        st.session_state["tutorial_child"] = None
+
+    step = st.session_state["tutorial_step"]
+
+    if step == 1:
+        st.subheader("Step 1️⃣: Commit a New Module")
+        st.markdown("In PLM, a module is like a part or component. You’ll start by committing your first one.")
+        if st.button("🧱 Commit Module"):
+            from pyPLM import Item, add_item_to_db
+            new_item = Item()
+            st.session_state["tutorial_item"] = new_item.item_number
+            add_item_to_db(new_item)
+            st.success(f"✅ Committed `{new_item.item_number}` successfully!")
+            st.session_state["tutorial_step"] = 2
+
+    elif step == 2:
+        st.subheader("Step 2️⃣: Declare a Dependency")
+        st.markdown("Now link another module as a dependency (like adding a library or module import).")
+        from pyPLM import Item, add_item_to_db, get_db_connection
+        new_child = Item()
+        st.session_state["tutorial_child"] = new_child.item_number
+        add_item_to_db(new_child)
+        st.success(f"✅ Added `{new_child.item_number}` as a potential dependency.")
+        if st.button("🔗 Link It"):
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO bom_links (parent_item, child_item, quantity) VALUES (?, ?, ?)",
+                           (st.session_state["tutorial_item"], st.session_state["tutorial_child"], 1))
+            conn.commit()
+            st.success(f"🔗 `{st.session_state['tutorial_child']}` linked as dependency to `{st.session_state['tutorial_item']}`")
+            st.session_state["tutorial_step"] = 3
+
+    elif step == 3:
+        st.subheader("Step 3️⃣: View Dependencies")
+        st.markdown("Check the Dependency Viewer to see the BOM (like a dependency tree).")
+        st.info("✅ You’ve completed the basics. Use the menu to explore your modules, create patches, or advance workflows.")
+        if st.button("🏁 Finish Tutorial"):
+            st.session_state["tutorial_step"] = 1
+            st.success("🎉 Done! You’re ready to explore the PLM world like a dev pro.")
