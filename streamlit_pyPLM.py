@@ -112,6 +112,43 @@ if main_menu == "BOM Management":
                     })
 
                 if bom_data:
+
+                    st.markdown("### Edit BOM Quantities & Unlink Items")
+                    updated = False
+                    for row in bom_data[1:]:  # skip top-level
+                        col1, col2, col3 = st.columns([4, 3, 2])
+                        with col1:
+                            new_qty = st.number_input(
+                                f"Qty for {row['Item Number']}",
+                                min_value=1,
+                                step=1,
+                                value=row['Quantity'],
+                                key="qty_" + row["Item Number"]
+                            )
+                        with col2:
+                            if st.button(f"Update Quantity for {row['Item Number']}", key="btn_qty_" + row["Item Number"]):
+                                item.bom.change_quantity(row["Item Number"], new_qty)
+                                updated = True
+                        with col3:
+                            if st.button(f"Unlink {row['Item Number']}", key="btn_unlink_" + row["Item Number"]):
+                                if row["Item Number"] in item.bom.items:
+                                    del item.bom.items[row["Item Number"]]
+                                    item.lower_level = [i for i in item.lower_level if i.item_number != row["Item Number"]]
+                                    cursor.execute("UPDATE items SET upper_level = NULL WHERE item_number = ?", (row["Item Number"],))
+                                    conn.commit()
+                                    st.warning(f"Unlinked {row['Item Number']} from {item.item_number}")
+                                updated = True
+
+                    if updated:
+                        st.success("Changes applied (in memory).")
+
+                    # CSV Export
+                    if st.button("📥 Export BOM to CSV"):
+                        import pandas as pd
+                        bom_df = pd.DataFrame(bom_data)
+                        bom_df.to_csv("bom_export.csv", index=False)
+                        with open("bom_export.csv", "rb") as f:
+                            st.download_button("Download BOM CSV", f, file_name=f"{item.item_number}_BOM.csv")
                     st.markdown("### Edit BOM Quantities")
                     for row in bom_data[1:]:  # skip top-level item
                         new_qty = st.number_input(
