@@ -5,7 +5,6 @@ import os
 from pyPLM import (
     create_database, get_db_connection, Item, BOM, ChangeRequest,
     add_item_to_db, add_change_request_to_db, load_bom_links
-)
 
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
@@ -24,7 +23,6 @@ with col1:
     "<h1 style='display:inline;'>PyPLM</h1>"
     "</div>",
     unsafe_allow_html=True
-)
 
 import time
 if "splash_shown" not in st.session_state:
@@ -135,7 +133,6 @@ if main_menu == "Dependency Viewer":
                 data=csv,
                 file_name=f"{item.item_number}_dependencies.csv",
                 mime='text/csv'
-            )
         else:
             st.info("No dependencies declared for this module.")
     else:
