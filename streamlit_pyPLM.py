@@ -42,13 +42,14 @@ if main_menu == "Item Management":
         st.subheader("Link Items")
         parent = st.text_input("Parent Item")
         child = st.text_input("Child Item")
+        quantity = st.number_input("Quantity", min_value=1, value=1)
         submitted = st.form_submit_button("Link")
         if submitted:
             p = bom.get_item(parent)
             c = bom.get_item(child)
             if p and c:
-                p.add_lower_level_item(c)
-                st.success(f"Linked {child} under {parent}")
+                p.add_lower_level_item(c, quantity)
+                st.success(f"Linked {child} under {parent} (Qty: {quantity})")
             else:
                 st.error("One or both items not found")
 
@@ -68,18 +69,21 @@ if main_menu == "Change Requests":
             else:
                 st.error("Item not found")
 
-
 if main_menu == "BOM Management":
-    st.header("BOM Viewer")
+    st.header("BOM Viewer + Quantity Editor")
     selected_item = st.text_input("Enter Item Number")
     item = bom.get_item(selected_item)
     if item:
         st.subheader(f"BOM for {item.item_number}")
         st.markdown(f"• **{item.item_number}** (Top-level, Qty: 1)")
         if item.bom.items:
-            for i_num, linked_item in item.bom.items.items():
-                if linked_item.item_number != item.item_number:
-                    st.markdown(f"  ↳ **{linked_item.item_number}** (linked)")
+            st.markdown("#### Edit BOM Quantities")
+            for child_id, child in item.bom.items.items():
+                qty = item.bom.quantities.get(child_id, 1)
+                new_qty = st.number_input(f"Qty for {child_id}", min_value=1, value=qty, key=f"qty_{child_id}")
+                if st.button(f"Update Qty for {child_id}", key=f"btn_{child_id}"):
+                    item.bom.change_quantity(child_id, new_qty)
+                    st.success(f"Updated quantity for {child_id} to {new_qty}")
         else:
             st.info("No lower-level items linked.")
     else:
