@@ -1,36 +1,26 @@
-from pyPLM import get_item_state, update_item_state
-import pandas as pd
-from collections import defaultdict
 from pyPLM import (
+    create_database, get_db_connection, Item, BOM, ChangeRequest,
+    add_item_to_db, add_change_request_to_db, load_bom_links,
+    get_item_state, update_item_state
+)
 import os
 import sqlite3
 import streamlit as st
 import time
+import pandas as pd
+from collections import defaultdict
 
-
+# Configure the Streamlit page
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
-
-    create_database, get_db_connection, Item, BOM, ChangeRequest,
-    add_item_to_db, add_change_request_to_db, load_bom_links
-
-
-# ✅ Show logo using Streamlit-native image layout
+# ✅ Show logo and header using Streamlit-native image layout
 col1, col2 = st.columns([1, 10])
 with col1:
     st.image("pyplm_cat_logo_small.gif", width=50)
 with col2:
     st.markdown("### PyPLM\n*Lightweight PLM for developers*", unsafe_allow_html=True)
-with col1:
-    st.image("pyplm_cat_logo_small.gif", width=50)
 
-# Add a small animated cat logo to the header
-    "<div style='display: flex; align-items: center;'>"
-    "<img src='pyplm_cat_logo_small.gif' width='50' style='margin-right: 10px'/>"
-    "<h1 style='display:inline;'>PyPLM</h1>"
-    "</div>",
-    unsafe_allow_html=True
-
+# Show splash screen on first load
 if "splash_shown" not in st.session_state:
     splash = st.empty()
     with splash.container():
@@ -40,10 +30,11 @@ if "splash_shown" not in st.session_state:
     splash.empty()
     st.session_state["splash_shown"] = True
 
-
+# Initialize database and BOM
 create_database()
 bom = BOM()
 
+# Load existing items
 conn = get_db_connection()
 cursor = conn.cursor()
 cursor.execute("SELECT * FROM items")
@@ -55,8 +46,11 @@ for row in cursor.fetchall():
 # Load links
 load_bom_links(bom)
 
+# Main menu
 main_menu = st.sidebar.selectbox("Menu", [
-    "Module Registry", "Patch Management", "Dependency Viewer", "System Status", "Purge DB"
+    "Module Registry", "Patch Management", "Dependency Viewer", 
+    "System Status", "Workflow Simulator", "Module Roadmap", 
+    "Glossary", "Purge DB"
 ])
 
 # --- Module Registry ---
@@ -138,6 +132,7 @@ if main_menu == "Dependency Viewer":
                 data=csv,
                 file_name=f"{item.item_number}_dependencies.csv",
                 mime='text/csv'
+            )
         else:
             st.info("No dependencies declared for this module.")
     else:
@@ -165,62 +160,7 @@ if main_menu == "System Status":
     else:
         st.info("Log file not found.")
 
-# --- Purge ---
-if main_menu == "Purge DB":
-    st.warning("This will delete all project data.")
-    if st.button("⚠️ Confirm Project Reset"):
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute("DELETE FROM items")
-        c.execute("DELETE FROM change_requests")
-        c.execute("DELETE FROM documents")
-        c.execute("DELETE FROM bom_links")
-        conn.commit()
-        st.success("🗑️ Project reset complete.")
-
-if main_menu == "Glossary":
-    st.header("📖 PLM Glossary for Developers")
-    glossary = {
-        "Module (Item)": "A reusable unit or part in a system, like a class, package, or microservice.",
-        "Dependency (BOM)": "Other modules this one depends on — like imports or library references.",
-        "Pull Request (Change Request)": "A request to make a change to a module — reviewed and approved.",
-        "Lifecycle / Workflow": "The stages a module goes through: Draft → Reviewed → Released.",
-        "Document": "A spec, diagram, or PDF linked to a module or request — like a README or architecture doc.",
-        "Quantity": "How many units of a module are used — think of this like container scaling or replicas.",
-    }
-    for term, desc in glossary.items():
-
-if main_menu == "Workflow Simulator":
-    st.header("🚦 Module Lifecycle State")
-    item_id = st.text_input("Enter Module ID", help="Check and update the state of a specific module")
-
-    if item_id:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT item_number FROM items WHERE item_number = ?", (item_id,))
-        exists = cursor.fetchone()
-        if exists:
-            state_key = f"{item_id}_state"
-            if state_key not in st.session_state:
-                st.session_state[state_key] = "Draft"
-
-
-            if st.session_state[state_key] == "Draft":
-                if st.button("Submit for Review"):
-                    st.session_state[state_key] = "Reviewed"
-                    st.success("Moved to Reviewed state")
-
-            elif st.session_state[state_key] == "Reviewed":
-                if st.button("Approve & Release"):
-                    st.session_state[state_key] = "Released"
-                    st.success("Module is now Released ✅")
-
-            elif st.session_state[state_key] == "Released":
-                st.info("Module is fully released. 🎉")
-        else:
-            st.error("Module not found")
-
-
+# --- Workflow Simulator ---
 if main_menu == "Workflow Simulator":
     st.header("🚦 Module Lifecycle Tracker")
     item_id = st.text_input("Enter Module ID", help="Check and update the lifecycle stage")
@@ -231,7 +171,6 @@ if main_menu == "Workflow Simulator":
         cursor.execute("SELECT item_number FROM items WHERE item_number = ?", (item_id,))
         exists = cursor.fetchone()
         if exists:
-
             current_state = get_item_state(item_id)
 
             st.progress(["Draft", "Reviewed", "Released"].index(current_state) / 2)
@@ -249,6 +188,7 @@ if main_menu == "Workflow Simulator":
         else:
             st.error("Module not found.")
 
+# --- Module Roadmap ---
 if main_menu == "Module Roadmap":
     st.header("🗺️ Module Roadmap by State")
     conn = get_db_connection()
@@ -265,10 +205,42 @@ if main_menu == "Module Roadmap":
     with col1:
         st.subheader("📥 Draft")
         for item in state_map.get("Draft", []):
+            st.write(f"- {item}")
 
+    with col2:
         st.subheader("🔍 Reviewed")
         for item in state_map.get("Reviewed", []):
+            st.write(f"- {item}")
 
     with col3:
         st.subheader("✅ Released")
         for item in state_map.get("Released", []):
+            st.write(f"- {item}")
+
+# --- Glossary ---
+if main_menu == "Glossary":
+    st.header("📖 PLM Glossary for Developers")
+    glossary = {
+        "Module (Item)": "A reusable unit or part in a system, like a class, package, or microservice.",
+        "Dependency (BOM)": "Other modules this one depends on — like imports or library references.",
+        "Pull Request (Change Request)": "A request to make a change to a module — reviewed and approved.",
+        "Lifecycle / Workflow": "The stages a module goes through: Draft → Reviewed → Released.",
+        "Document": "A spec, diagram, or PDF linked to a module or request — like a README or architecture doc.",
+        "Quantity": "How many units of a module are used — think of this like container scaling or replicas.",
+    }
+    for term, desc in glossary.items():
+        st.subheader(term)
+        st.write(desc)
+
+# --- Purge DB ---
+if main_menu == "Purge DB":
+    st.warning("This will delete all project data.")
+    if st.button("⚠️ Confirm Project Reset"):
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("DELETE FROM items")
+        c.execute("DELETE FROM change_requests")
+        c.execute("DELETE FROM documents")
+        c.execute("DELETE FROM bom_links")
+        conn.commit()
+        st.success("🗑️ Project reset complete.")
