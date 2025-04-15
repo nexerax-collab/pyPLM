@@ -166,31 +166,147 @@ if main_menu == "System Status":
 
 # --- Workflow Simulator ---
 if main_menu == "Workflow Simulator":
-    st.header("🚦 Module Lifecycle Tracker")
-    item_id = st.text_input("Enter Module ID", help="Check and update the lifecycle stage")
+    st.header("🚦 Module Lifecycle Simulator")
+    
+    # Initialize session state for workflow steps
+    if 'workflow_step' not in st.session_state:
+        st.session_state.workflow_step = 1
+    if 'created_module' not in st.session_state:
+        st.session_state.created_module = None
+    if 'patch_submitted' not in st.session_state:
+        st.session_state.patch_submitted = False
 
-    if item_id:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT item_number FROM items WHERE item_number = ?", (item_id,))
-        exists = cursor.fetchone()
-        if exists:
-            current_state = get_item_state(item_id)
+    # Display workflow progress
+    progress_text = ["1. Create Module", "2. Submit Patch", "3. Progress Lifecycle"]
+    progress_value = (st.session_state.workflow_step - 1) / 3
+    st.progress(progress_value, text=f"Step {st.session_state.workflow_step} of 3")
 
-            st.progress(["Draft", "Reviewed", "Released"].index(current_state) / 2)
+    # Step 1: Create Module
+    if st.session_state.workflow_step == 1:
+        st.subheader("🎯 Step 1: Create New Module")
+        st.markdown("""
+        > In this step, you'll create a new module in the system. Think of this as:
+        > - Creating a new microservice
+        > - Starting a new package
+        > - Initializing a new component
+        """)
 
+        col1, col2 = st.columns([2,1])
+        with col1:
+            module_type = st.selectbox(
+                "Module Type",
+                ["Backend Service", "Frontend Component", "Data Model", "API Interface", "Utility Library"]
+            )
+            module_desc = st.text_area("Module Description", placeholder="Describe the purpose of this module...")
+        with col2:
+            st.info("📝 Tips:\n- Be specific\n- Consider dependencies\n- Think about scaling")
+
+        if st.button("🏗️ Create Module"):
+            new_item = Item()
+            bom.add_item(new_item)
+            add_item_to_db(new_item)
+            st.session_state.created_module = new_item.item_number
+            st.session_state.workflow_step = 2
+            st.success(f"✨ Module `{new_item.item_number}` created successfully!")
+            st.rerun()
+
+    # Step 2: Submit Patch
+    elif st.session_state.workflow_step == 2:
+        st.subheader("🔄 Step 2: Submit Module Patch")
+        st.markdown(f"""
+        > Current Module: `{st.session_state.created_module}`
+        > 
+        > Time to improve your module! Submit a patch (like a Pull Request) to:
+        > - Add features
+        > - Fix issues
+        > - Improve performance
+        """)
+
+        col1, col2 = st.columns([2,1])
+        with col1:
+            patch_type = st.selectbox(
+                "Patch Type",
+                [
+                    "✨ Feature: Add new capability",
+                    "🐛 Fix: Resolve an issue",
+                    "🚀 Performance: Optimize code",
+                    "📚 Docs: Improve documentation"
+                ]
+            )
+            patch_desc = st.text_area("Patch Details", placeholder="Describe your changes...")
+            patch_impact = st.select_slider(
+                "Impact Assessment",
+                options=["Minimal", "Moderate", "Significant"],
+                value="Moderate"
+            )
+        with col2:
+            st.info("🔍 Review Checklist:\n- Tests included?\n- Docs updated?\n- Dependencies checked?")
+
+        if st.button("📤 Submit Patch"):
+            item = bom.get_item(st.session_state.created_module)
+            if item:
+                cr = item.create_change_request(
+                    reason=patch_type[0],
+                    cost_impact=patch_impact,
+                    timeline_impact="< 1 week"
+                )
+                add_change_request_to_db(cr)
+                st.session_state.patch_submitted = True
+                st.session_state.workflow_step = 3
+                st.success(f"🎉 Patch #{cr.change_request_number} submitted successfully!")
+                st.rerun()
+
+    # Step 3: Lifecycle Management
+    elif st.session_state.workflow_step == 3:
+        st.subheader("📈 Step 3: Progress Module Lifecycle")
+        st.markdown(f"""
+        > Module `{st.session_state.created_module}` Lifecycle Management
+        >
+        > Guide your module through its lifecycle stages:
+        > 1. 📝 Draft: Initial development
+        > 2. 🔍 Reviewed: Peer review complete
+        > 3. ✅ Released: Production-ready
+        """)
+
+        current_state = get_item_state(st.session_state.created_module)
+        
+        col1, col2 = st.columns([2,1])
+        with col1:
+            st.info(f"Current State: {current_state}")
+            
+            lifecycle_chart_data = pd.DataFrame({
+                'Stage': ['Draft', 'Reviewed', 'Released'],
+                'Value': [100 if s == current_state else 30 for s in ['Draft', 'Reviewed', 'Released']]
+            })
+            st.bar_chart(lifecycle_chart_data.set_index('Stage'))
+
+        with col2:
+            st.success("Patch Status: ✅ Submitted")
             if current_state == "Draft":
-                if st.button("▶ Submit for Review"):
-                    update_item_state(item_id, "Reviewed")
-                    st.success("State updated to Reviewed ✅")
+                if st.button("🔍 Submit for Review"):
+                    update_item_state(st.session_state.created_module, "Reviewed")
+                    st.rerun()
             elif current_state == "Reviewed":
-                if st.button("✅ Approve & Release"):
-                    update_item_state(item_id, "Released")
-                    st.success("State updated to Released 🎉")
+                if st.button("✨ Release to Production"):
+                    update_item_state(st.session_state.created_module, "Released")
+                    st.rerun()
             elif current_state == "Released":
-                st.info("This module is fully released.")
-        else:
-            st.error("Module not found.")
+                st.success("🎉 Module Successfully Released!")
+                if st.button("🔄 Start New Workflow"):
+                    st.session_state.workflow_step = 1
+                    st.session_state.created_module = None
+                    st.session_state.patch_submitted = False
+                    st.rerun()
+
+    # Display current workflow context
+    with st.sidebar:
+        st.markdown("### 📋 Workflow Context")
+        st.markdown(f"""
+        - **Current Step:** {progress_text[st.session_state.workflow_step - 1]}
+        - **Module ID:** `{st.session_state.created_module if st.session_state.created_module else 'Not created yet'}`
+        - **Patch Status:** {'✅ Submitted' if st.session_state.patch_submitted else '⏳ Pending'}
+        """)
+
 
 # --- Module Roadmap ---
 if main_menu == "Module Roadmap":
