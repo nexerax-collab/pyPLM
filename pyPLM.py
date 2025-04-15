@@ -1,3 +1,6 @@
+# pyPLM.py
+# Last Updated: 2025-04-15 08:38:16 UTC
+# Author: nexerax-collab
 
 import sqlite3
 import logging
@@ -147,3 +150,26 @@ def load_bom_links(bom):
         if parent and child:
             parent.bom.add_item(child, qty)
             child.upper_level = parent
+
+def get_item_state(item_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT state FROM items WHERE item_number = ?", (item_id,))
+        result = cursor.fetchone()
+        return result["state"] if result else "Draft"
+    except Exception as e:
+        logging.error(f"Get State Error: {e}")
+        return "Draft"
+
+def update_item_state(item_id, new_state):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE items SET state = ? WHERE item_number = ?", (new_state, item_id))
+        conn.commit()
+        logging.info(f"Updated state for {item_id} to {new_state}")
+        return True
+    except Exception as e:
+        logging.error(f"Update State Error: {e}")
+        return False
