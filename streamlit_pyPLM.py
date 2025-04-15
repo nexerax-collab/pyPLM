@@ -1,3 +1,7 @@
+# streamlit_pyPLM.py
+# Last Updated: 2025-04-15 08:38:16 UTC
+# Author: nexerax-collab
+
 from pyPLM import (
     create_database, get_db_connection, Item, BOM, ChangeRequest,
     add_item_to_db, add_change_request_to_db, load_bom_links,
@@ -13,7 +17,7 @@ from collections import defaultdict
 # Configure the Streamlit page
 st.set_page_config(page_title="PyPLM - Dev Mode", layout="wide")
 
-# ✅ Show logo and header using Streamlit-native image layout
+# Show logo and header
 col1, col2 = st.columns([1, 10])
 with col1:
     st.image("pyplm_cat_logo_small.gif", width=50)
