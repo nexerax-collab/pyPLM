@@ -1,156 +1,242 @@
-# --- Common Session Information Function ---
-def show_session_header():
+def show_enhanced_feature_discovery():
+    current_utc = "2025-04-15 09:33:47"
+    current_user = "nexerax-collab"
+
     st.markdown(f"""
-    <div style='background-color: #f0f2f6; padding: 0.5em; border-radius: 5px; margin-bottom: 1em; font-family: monospace;'>
-        <small>
-        Session: {st.session_state.user_data['session_id']}
-        • User: {st.session_state.user_data['login']}
-        • UTC: 2025-04-15 09:15:14
+    <div style='background-color: #f0f2f6; padding: 0.5em; border-radius: 5px; margin-bottom: 1em;'>
+        <small style='font-family: monospace;'>
+        🕒 {current_utc} UTC • 👤 {current_user} • 🔍 Feature Discovery Tour
         </small>
     </div>
     """, unsafe_allow_html=True)
 
-# --- General App Introduction ---
-def show_app_welcome():
-    st.markdown("""
-    <div style='text-align: center; padding: 2em 0;'>
-        <h1>Welcome to PyPLM</h1>
-        <p style='font-size: 1.2em; color: #666;'>Product Lifecycle Management for Modern Development</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.header("🎯 Interactive Feature Discovery")
 
-    st.markdown("""
-    ### 🎯 What is PyPLM?
-    
-    PyPLM is a modern, developer-focused Product Lifecycle Management system that helps teams:
-    - Manage software modules and components
-    - Track changes and their impacts
-    - Control configurations and dependencies
-    - Ensure quality and compliance
-    
-    ### 🚀 Quick Start Guide
-    
-    1. **Try the Workflow Simulator**
-       - Experience PLM concepts hands-on
-       - Learn best practices
-       - Understand the lifecycle
-    
-    2. **Manage Your Modules**
-       - Create and organize components
-       - Track dependencies
-       - Monitor metrics
-    
-    3. **Control Changes**
-       - Submit and review changes
-       - Assess impacts
-       - Track history
-    
-    ### 📚 Key Concepts
-    
-    ```mermaid
-    graph LR
-        A[Modules] --> B[Changes]
-        B --> C[Lifecycle]
-        C --> D[Release]
-        A --> E[Dependencies]
-        B --> F[Impact]
-    ```
-    
-    ### 🎓 Learning Path
-    
-    1. **Beginner**
-       - Start with Workflow Simulator
-       - Create basic modules
-       - Submit simple changes
-    
-    2. **Intermediate**
-       - Manage dependencies
-       - Analyze impacts
-       - Track metrics
-    
-    3. **Advanced**
-       - Configure workflows
-       - Optimize processes
-       - Generate reports
-    """)
-
-    # Quick access cards
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.info("🎮 **Start Learning**\nTry the interactive workflow simulator")
-        if st.button("Launch Simulator"):
-            st.session_state.menu = "🎮 Interactive Workflow"
-            st.rerun()
-    
-    with col2:
-        st.info("📦 **Start Building**\nCreate your first module")
-        if st.button("Create Module"):
-            st.session_state.menu = "📦 Module Management"
-            st.rerun()
-    
-    with col3:
-        st.info("📚 **Start Reading**\nExplore the knowledge base")
-        if st.button("Browse Docs"):
-            st.session_state.menu = "📚 Knowledge Base"
-            st.rerun()
-
-# --- Main App Structure ---
-def main():
-    # Initialize session state
-    if 'user_data' not in st.session_state:
-        st.session_state.user_data = {
-            'login': 'nexerax-collab',
-            'session_id': f"SESSION_{int(time.time())}",
-            'start_time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        }
-
-    # Configure the page
-    st.set_page_config(
-        page_title="PyPLM - Developer's Guide to PLM",
-        layout="wide",
-        initial_sidebar_state="expanded"
+    # Feature Categories with detailed tours
+    feature_category = st.selectbox(
+        "Select a feature category to explore",
+        [
+            "Choose a category...",
+            "📦 Module Management Suite",
+            "🔄 Change Control System",
+            "🔗 Dependency Management",
+            "📊 Analytics & Reporting",
+            "🔍 Impact Analysis Tools",
+            "📚 Documentation Center"
+        ]
     )
 
-    # Show logo and app header
-    show_app_logo()
+    if feature_category != "Choose a category...":
+        # Initialize feature tour state
+        if 'feature_tour' not in st.session_state:
+            st.session_state.feature_tour = {
+                'current_step': 0,
+                'completed_tours': set(),
+                'current_category': None
+            }
 
-    # Main navigation
-    main_menu = st.sidebar.selectbox("Navigation", [
-        "🏠 Introduction",
-        "🎮 Interactive Workflow",
-        "📦 Module Management",
-        "🔄 Change Control",
-        "🔗 Dependencies & Impact",
-        "📊 System Overview",
-        "📚 Knowledge Base",
-        "⚙️ Settings"
-    ])
+        # Reset tour if category changed
+        if st.session_state.feature_tour['current_category'] != feature_category:
+            st.session_state.feature_tour['current_step'] = 0
+            st.session_state.feature_tour['current_category'] = feature_category
 
-    # Show session info in sidebar
-    with st.sidebar:
-        st.markdown("### 🔍 Session Info")
-        st.code(f"""
-User: {st.session_state.user_data['login']}
-Time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
-Session: {st.session_state.user_data['session_id']}
+        # Feature Tours Content
+        tours = {
+            "📦 Module Management Suite": {
+                'steps': [
+                    {
+                        'title': "Module Creation Wizard",
+                        'description': """
+                        Create new software modules with our intuitive wizard:
+                        - Define module properties
+                        - Set up dependencies
+                        - Configure build settings
+                        """,
+                        'demo': show_module_creation_demo
+                    },
+                    {
+                        'title': "Module Templates",
+                        'description': """
+                        Start with pre-configured templates:
+                        - Microservice template
+                        - Library template
+                        - API template
+                        """,
+                        'demo': show_template_demo
+                    },
+                    {
+                        'title': "Version Control",
+                        'description': """
+                        Manage module versions effectively:
+                        - Version tagging
+                        - Release management
+                        - Changelog generation
+                        """,
+                        'demo': show_version_control_demo
+                    }
+                ],
+                'interactive_demo': True
+            },
+            "🔄 Change Control System": {
+                'steps': [
+                    {
+                        'title': "Change Request Creation",
+                        'description': """
+                        Submit and track changes:
+                        - Define change scope
+                        - Set priority levels
+                        - Assign reviewers
+                        """,
+                        'demo': show_change_request_demo
+                    },
+                    {
+                        'title': "Review Workflow",
+                        'description': """
+                        Streamlined review process:
+                        - Multi-stage reviews
+                        - Automated checks
+                        - Approval tracking
+                        """,
+                        'demo': show_review_workflow_demo
+                    }
+                ],
+                'interactive_demo': True
+            }
+        }
+
+        if feature_category in tours:
+            tour_data = tours[feature_category]
+            current_step = st.session_state.feature_tour['current_step']
+            total_steps = len(tour_data['steps'])
+
+            # Show tour progress
+            st.progress(current_step / total_steps, 
+                       f"Tour Progress: Step {current_step + 1}/{total_steps}")
+
+            # Display current step
+            step = tour_data['steps'][current_step]
+            
+            col1, col2 = st.columns([2,1])
+            with col1:
+                st.subheader(step['title'])
+                st.markdown(step['description'])
+                
+                # Interactive elements based on step
+                if 'demo' in step:
+                    step['demo']()
+
+            with col2:
+                st.markdown("### Try it out")
+                if tour_data['interactive_demo']:
+                    show_interactive_feature_demo(feature_category, step['title'])
+
+            # Navigation buttons
+            col1, col2, col3 = st.columns([1,2,1])
+            with col1:
+                if current_step > 0:
+                    if st.button("⬅️ Previous Step"):
+                        st.session_state.feature_tour['current_step'] -= 1
+                        st.rerun()
+            
+            with col3:
+                if current_step < total_steps - 1:
+                    if st.button("Next Step ➡️"):
+                        st.session_state.feature_tour['current_step'] += 1
+                        st.rerun()
+                elif current_step == total_steps - 1:
+                    if st.button("✅ Complete Tour"):
+                        st.session_state.feature_tour['completed_tours'].add(feature_category)
+                        show_tour_completion()
+
+        # Show tour completion status
+        if st.session_state.feature_tour['completed_tours']:
+            st.sidebar.markdown("### 🏆 Completed Tours")
+            for completed in st.session_state.feature_tour['completed_tours']:
+                st.sidebar.success(f"✅ {completed}")
+
+def show_interactive_feature_demo(category, feature):
+    """Show interactive demo for specific feature"""
+    st.markdown("### 🎮 Interactive Demo")
+    
+    if category == "📦 Module Management Suite":
+        if feature == "Module Creation Wizard":
+            with st.form("demo_module_creation"):
+                st.text_input("Module Name", placeholder="my-awesome-module")
+                st.selectbox("Module Type", ["Service", "Library", "API"])
+                st.text_area("Description", placeholder="Describe your module...")
+                st.button("Create Demo Module")
+    
+    elif category == "🔄 Change Control System":
+        if feature == "Change Request Creation":
+            with st.form("demo_change_request"):
+                st.selectbox("Change Type", ["Feature", "Bug Fix", "Enhancement"])
+                st.text_area("Change Description", placeholder="Describe the change...")
+                st.button("Submit Demo Change")
+
+def show_guided_tour():
+    """Show comprehensive guided tour"""
+    st.markdown("### 🎯 Guided Tour")
+    
+    if 'guided_tour' not in st.session_state:
+        st.session_state.guided_tour = {
+            'started': False,
+            'current_step': 0,
+            'completed_steps': set()
+        }
+
+    if not st.session_state.guided_tour['started']:
+        st.markdown("""
+        Welcome to the PyPLM Guided Tour! 
+        This tour will walk you through all major features and best practices.
+        
+        **Duration:** ~30 minutes
+        **Topics Covered:**
+        - Module Management
+        - Change Control
+        - Dependencies
+        - Analytics
         """)
+        
+        if st.button("🚀 Start Guided Tour"):
+            st.session_state.guided_tour['started'] = True
+            st.rerun()
+    else:
+        tour_steps = [
+            {
+                'title': "Module Creation",
+                'content': show_module_tour,
+                'duration': "5 min"
+            },
+            {
+                'title': "Change Management",
+                'content': show_change_tour,
+                'duration': "8 min"
+            },
+            {
+                'title': "Dependency Analysis",
+                'content': show_dependency_tour,
+                'duration': "7 min"
+            },
+            {
+                'title': "Reporting & Analytics",
+                'content': show_analytics_tour,
+                'duration': "10 min"
+            }
+        ]
 
-    # Show context-aware help
-    show_context_help(main_menu)
+        current_step = tour_steps[st.session_state.guided_tour['current_step']]
+        
+        # Show tour progress
+        st.progress(len(st.session_state.guided_tour['completed_steps']) / len(tour_steps),
+                   f"Tour Progress: {len(st.session_state.guided_tour['completed_steps'])}/{len(tour_steps)} completed")
+        
+        st.subheader(f"Step {st.session_state.guided_tour['current_step'] + 1}: {current_step['title']}")
+        st.markdown(f"⏱️ Duration: {current_step['duration']}")
+        
+        current_step['content']()
 
-    # Display session header
-    show_session_header()
-
-    # Route to appropriate section
-    if main_menu == "🏠 Introduction":
-        show_app_welcome()
-    elif main_menu == "🎮 Interactive Workflow":
-        show_workflow_simulator()
-    elif main_menu == "📦 Module Management":
-        show_module_management()
-    elif main_menu == "🔄 Change Control":
-        show_change_control()
-    # ... [other sections]
-
-if __name__ == "__main__":
-    main()
+# Add these to your main navigation
+if main_menu == "🎯 Feature Discovery":
+    show_enhanced_feature_discovery()
+elif main_menu == "🎮 Guided Tour":
+    show_guided_tour()
