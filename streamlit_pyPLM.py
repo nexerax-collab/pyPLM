@@ -1,143 +1,156 @@
-# streamlit_pyPLM.py
-# Last Updated: 2025-04-15 08:49:18 UTC
-# Author: nexerax-collab
+# --- Common Session Information Function ---
+def show_session_header():
+    st.markdown(f"""
+    <div style='background-color: #f0f2f6; padding: 0.5em; border-radius: 5px; margin-bottom: 1em; font-family: monospace;'>
+        <small>
+        Session: {st.session_state.user_data['session_id']}
+        • User: {st.session_state.user_data['login']}
+        • UTC: 2025-04-15 09:15:14
+        </small>
+    </div>
+    """, unsafe_allow_html=True)
 
-[previous imports and logo remain the same...]
-
-# Main menu with workflow first and hint
-st.sidebar.info("👋 New to PyPLM? Start with the Workflow Simulator to learn the basics!")
-
-main_menu = st.sidebar.selectbox("Menu", [
-    "Workflow Simulator",  # Moved to top
-    "Module Registry",
-    "Patch Management", 
-    "Dependency Viewer",
-    "System Status", 
-    "Module Roadmap",
-    "Glossary",
-    "Purge DB"
-])
-
-# Add context helper in sidebar
-with st.sidebar:
-    st.markdown("### 📋 Current Context")
-    if main_menu == "Workflow Simulator":
-        if 'workflow_step' in st.session_state:
-            st.markdown(f"""
-            - **Current Step:** Step {st.session_state.workflow_step} of 3
-            - **Module ID:** `{st.session_state.created_module if st.session_state.created_module else 'Not created yet'}`
-            - **Patch Status:** {'✅ Submitted' if st.session_state.patch_submitted else '⏳ Pending'}
-            """)
-    else:
-        st.markdown(f"""
-        - **Current View:** {main_menu}
-        - **Total Modules:** {len(bom.items) if hasattr(bom, 'items') else 0}
-        - **Session Start:** {time.strftime('%H:%M:%S')}
-        """)
-
-[Workflow Simulator section remains as in previous response...]
-
-# --- Module Registry ---
-if main_menu == "Module Registry":
-    st.header("📦 Module Registry")
+# --- General App Introduction ---
+def show_app_welcome():
     st.markdown("""
-    > The Module Registry is where you manage your software components.
-    > Think of it as your package repository or service catalog.
+    <div style='text-align: center; padding: 2em 0;'>
+        <h1>Welcome to PyPLM</h1>
+        <p style='font-size: 1.2em; color: #666;'>Product Lifecycle Management for Modern Development</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    ### 🎯 What is PyPLM?
+    
+    PyPLM is a modern, developer-focused Product Lifecycle Management system that helps teams:
+    - Manage software modules and components
+    - Track changes and their impacts
+    - Control configurations and dependencies
+    - Ensure quality and compliance
+    
+    ### 🚀 Quick Start Guide
+    
+    1. **Try the Workflow Simulator**
+       - Experience PLM concepts hands-on
+       - Learn best practices
+       - Understand the lifecycle
+    
+    2. **Manage Your Modules**
+       - Create and organize components
+       - Track dependencies
+       - Monitor metrics
+    
+    3. **Control Changes**
+       - Submit and review changes
+       - Assess impacts
+       - Track history
+    
+    ### 📚 Key Concepts
+    
+    ```mermaid
+    graph LR
+        A[Modules] --> B[Changes]
+        B --> C[Lifecycle]
+        C --> D[Release]
+        A --> E[Dependencies]
+        B --> F[Impact]
+    ```
+    
+    ### 🎓 Learning Path
+    
+    1. **Beginner**
+       - Start with Workflow Simulator
+       - Create basic modules
+       - Submit simple changes
+    
+    2. **Intermediate**
+       - Manage dependencies
+       - Analyze impacts
+       - Track metrics
+    
+    3. **Advanced**
+       - Configure workflows
+       - Optimize processes
+       - Generate reports
     """)
 
-    col1, col2 = st.columns([2,1])
+    # Quick access cards
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.subheader("🆕 Register New Module")
-        with st.form("module_form"):
-            module_type = st.selectbox(
-                "Module Type",
-                ["Backend Service", "Frontend Component", "Data Model", "API Interface", "Utility Library"]
-            )
-            module_desc = st.text_area("Module Description")
-            submit_module = st.form_submit_button("🏗️ Register Module")
-            if submit_module:
-                new_item = Item()
-                bom.add_item(new_item)
-                add_item_to_db(new_item)
-                st.success(f"✅ Module `{new_item.item_number}` registered successfully!")
+        st.info("🎮 **Start Learning**\nTry the interactive workflow simulator")
+        if st.button("Launch Simulator"):
+            st.session_state.menu = "🎮 Interactive Workflow"
+            st.rerun()
     
     with col2:
-        st.info("""
-        📝 **Tips:**
-        - Give clear descriptions
-        - Consider dependencies
-        - Use consistent naming
+        st.info("📦 **Start Building**\nCreate your first module")
+        if st.button("Create Module"):
+            st.session_state.menu = "📦 Module Management"
+            st.rerun()
+    
+    with col3:
+        st.info("📚 **Start Reading**\nExplore the knowledge base")
+        if st.button("Browse Docs"):
+            st.session_state.menu = "📚 Knowledge Base"
+            st.rerun()
+
+# --- Main App Structure ---
+def main():
+    # Initialize session state
+    if 'user_data' not in st.session_state:
+        st.session_state.user_data = {
+            'login': 'nexerax-collab',
+            'session_id': f"SESSION_{int(time.time())}",
+            'start_time': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+    # Configure the page
+    st.set_page_config(
+        page_title="PyPLM - Developer's Guide to PLM",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+
+    # Show logo and app header
+    show_app_logo()
+
+    # Main navigation
+    main_menu = st.sidebar.selectbox("Navigation", [
+        "🏠 Introduction",
+        "🎮 Interactive Workflow",
+        "📦 Module Management",
+        "🔄 Change Control",
+        "🔗 Dependencies & Impact",
+        "📊 System Overview",
+        "📚 Knowledge Base",
+        "⚙️ Settings"
+    ])
+
+    # Show session info in sidebar
+    with st.sidebar:
+        st.markdown("### 🔍 Session Info")
+        st.code(f"""
+User: {st.session_state.user_data['login']}
+Time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+Session: {st.session_state.user_data['session_id']}
         """)
 
-    st.subheader("🔗 Module Dependencies")
-    with st.form("dependency_form"):
-        col1, col2, col3 = st.columns([2,2,1])
-        with col1:
-            parent = st.text_input("Parent Module ID", help="The module that needs a dependency")
-        with col2:
-            child = st.text_input("Dependency Module ID", help="The module being added as a dependency")
-        with col3:
-            quantity = st.number_input("Instances", min_value=1, value=1)
-        
-        submit_dep = st.form_submit_button("Declare Dependency")
-        if submit_dep:
-            p = bom.get_item(parent)
-            c = bom.get_item(child)
-            if p and c:
-                p.add_lower_level_item(c, quantity)
-                st.success(f"🔗 Dependency declared: `{parent}` → `{child}` (x{quantity})")
-            else:
-                st.error("❌ One or both modules not found")
+    # Show context-aware help
+    show_context_help(main_menu)
 
-# --- Patch Management ---
-if main_menu == "Patch Management":
-    st.header("🔄 Patch Management")
-    st.markdown("""
-    > Manage changes to your modules through a structured process.
-    > Similar to Pull Requests in Git or Change Requests in PLM systems.
-    """)
+    # Display session header
+    show_session_header()
 
-    col1, col2 = st.columns([2,1])
-    with col1:
-        with st.form("patch_form"):
-            st.subheader("📝 Submit New Patch")
-            module_id = st.text_input("Module ID", help="Target module for the patch")
-            patch_type = st.selectbox(
-                "Patch Type",
-                [
-                    "✨ Feature: Add new capability",
-                    "🐛 Fix: Resolve an issue",
-                    "🚀 Performance: Optimize code",
-                    "📚 Docs: Improve documentation"
-                ]
-            )
-            impact = st.select_slider(
-                "Impact Level",
-                options=["Minimal", "Moderate", "Significant"]
-            )
-            details = st.text_area("Patch Details")
-            submit_patch = st.form_submit_button("📤 Submit Patch")
-            
-            if submit_patch:
-                item = bom.get_item(module_id)
-                if item:
-                    cr = item.create_change_request(
-                        reason=patch_type[0],
-                        cost_impact=impact,
-                        timeline_impact="< 1 week"
-                    )
-                    add_change_request_to_db(cr)
-                    st.success(f"✅ Patch #{cr.change_request_number} submitted for `{module_id}`")
-                else:
-                    st.error("❌ Module not found")
+    # Route to appropriate section
+    if main_menu == "🏠 Introduction":
+        show_app_welcome()
+    elif main_menu == "🎮 Interactive Workflow":
+        show_workflow_simulator()
+    elif main_menu == "📦 Module Management":
+        show_module_management()
+    elif main_menu == "🔄 Change Control":
+        show_change_control()
+    # ... [other sections]
 
-    with col2:
-        st.info("""
-        🔍 **Review Checklist:**
-        - Tests included?
-        - Docs updated?
-        - Dependencies checked?
-        - Impact assessed?
-        """)
-
-[Continue with similar instructional layouts for other sections...]
+if __name__ == "__main__":
+    main()
