@@ -1,3 +1,164 @@
+import streamlit as st
+import pandas as pd
+import sqlite3
+import time
+from datetime import datetime
+
+# Initialize session state
+if 'user_data' not in st.session_state:
+    st.session_state.user_data = {
+        'login': 'nexerax-collab',
+        'session_id': f"SESSION_{int(time.time())}",
+        'start_time': "2025-04-15 09:55:31"
+    }
+
+# Configure the page
+st.set_page_config(
+    page_title="PyPLM - Developer's Guide to PLM",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Show logo and header
+st.markdown("""
+    <div style='background-color: #f0f2f6; padding: 1em; border-radius: 5px; margin-bottom: 1em;'>
+        <div style='font-family: monospace; font-size: 1.2em; color: #0066cc;'>
+            PyPLM - Product Lifecycle Management
+        </div>
+        <div style='font-size: 0.9em; color: #666;'>Version 1.0.0-dev</div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Main navigation in sidebar with proper initialization
+main_menu = st.sidebar.selectbox(
+    "Navigation",
+    [
+        "🏠 Introduction",
+        "🎮 Interactive Workflow",
+        "📦 Module Management",
+        "🔄 Change Control",
+        "🔗 Dependencies & Impact",
+        "📊 System Overview",
+        "🎯 Feature Discovery",
+        "📚 Knowledge Base",
+        "⚙️ Settings"
+    ]
+)
+
+# Session information in sidebar
+with st.sidebar:
+    st.markdown("### 🔍 Session Information")
+    st.code(f"""
+UTC Time : {st.session_state.user_data['start_time']}
+User     : {st.session_state.user_data['login']}
+Session  : {st.session_state.user_data['session_id']}
+    """)
+
+# Main content area based on navigation selection
+if main_menu == "🏠 Introduction":
+    st.header("Welcome to PyPLM")
+    
+    # Quick Start Guide
+    st.subheader("🚀 Quick Start")
+    quick_start = st.selectbox(
+        "Choose where to start:",
+        [
+            "Select an option...",
+            "🎮 Try Interactive Tutorial",
+            "📦 Create First Module",
+            "🔄 Submit Change Request",
+            "📚 Read Documentation"
+        ]
+    )
+
+    # Learning Path
+    st.subheader("🎓 Learning Path")
+    learning_path = st.selectbox(
+        "Select your experience level:",
+        ["🌟 Beginner", "🚀 Intermediate", "🎯 Advanced"]
+    )
+
+    # Feature Discovery
+    st.subheader("🎯 Feature Discovery")
+    feature_category = st.selectbox(
+        "Explore features:",
+        [
+            "Choose a category...",
+            "📦 Module Management",
+            "🔄 Change Control",
+            "🔗 Dependencies",
+            "📊 Analytics"
+        ]
+    )
+
+elif main_menu == "🎮 Interactive Workflow":
+    st.header("Interactive Workflow Simulator")
+    # [Previous Interactive Workflow content]
+
+elif main_menu == "📦 Module Management":
+    st.header("Module Management")
+    # [Previous Module Management content]
+
+elif main_menu == "🔄 Change Control":
+    st.header("Change Control")
+    # [Previous Change Control content]
+
+elif main_menu == "🎯 Feature Discovery":
+    st.header("Feature Discovery")
+    
+    # Feature Categories
+    category = st.selectbox(
+        "Select a feature category to explore:",
+        [
+            "Choose a category...",
+            "📦 Module Management Suite",
+            "🔄 Change Control System",
+            "🔗 Dependency Management",
+            "📊 Analytics & Reporting"
+        ]
+    )
+    
+    if category != "Choose a category...":
+        # Initialize feature tour state if needed
+        if 'feature_tour' not in st.session_state:
+            st.session_state.feature_tour = {
+                'current_step': 0,
+                'completed_tours': set(),
+                'current_category': None
+            }
+        
+        # Show feature content based on selection
+        if category == "📦 Module Management Suite":
+            st.subheader("Module Management Features")
+            feature = st.selectbox(
+                "Select a feature to explore:",
+                [
+                    "Module Creation Wizard",
+                    "Module Templates",
+                    "Version Control"
+                ]
+            )
+            # Show demo content based on selected feature
+            
+        elif category == "🔄 Change Control System":
+            st.subheader("Change Control Features")
+            feature = st.selectbox(
+                "Select a feature to explore:",
+                [
+                    "Change Request Creation",
+                    "Review Workflow",
+                    "Impact Analysis"
+                ]
+            )
+            # Show demo content based on selected feature
+
+elif main_menu == "📚 Knowledge Base":
+    st.header("Knowledge Base")
+    # [Knowledge Base content]
+
+# Add session state debugging if needed
+if st.sidebar.checkbox("Show Debug Info"):
+    st.sidebar.write("Session State:", st.session_state)
 def show_enhanced_feature_discovery():
     current_utc = "2025-04-15 09:33:47"
     current_user = "nexerax-collab"
