@@ -1,206 +1,185 @@
-# ... (keep existing imports and base classes) ...
+import streamlit as st
+import pandas as pd
+import sqlite3
+import time
+from datetime import datetime
 
-CURRENT_UTC = "2025-04-15 12:27:38"
+# Constants
+CURRENT_UTC = "2025-04-15 13:09:30"
 CURRENT_USER = "nexerax-collab"
 
-# Add tooltips helper function
-def show_tooltip(text: str, help_text: str):
-    return f"{text} ℹ️" if st.checkbox(f"{text} ℹ️", help=help_text, key=f"tooltip_{text}")  else text
+# Initialize session state
+if 'initialized' not in st.session_state:
+    st.session_state.initialized = True
+    st.session_state.user_data = {
+        'login': CURRENT_USER,
+        'session_id': f"SESSION_{int(time.time())}",
+        'start_time': CURRENT_UTC
+    }
 
-# Enhanced Learning Resources
-def show_learning_resources():
-    st.header("📚 Learning Resources")
-    
-    # CM of the Future Insights
-    st.subheader(show_tooltip(
-        "Configuration Management Evolution",
-        "Learn how CM has evolved from basic version control to intelligent product lifecycle management"
-    ))
-    
-    insight_tabs = st.tabs([
-        "2025 CM Practices",
-        "AI-Driven PLM",
-        "Future of DevOps",
-        "Case Studies"
-    ])
-    
-    with insight_tabs[0]:
-        st.markdown("""
-        ### Modern CM Practices (2025)
-        
-        #### Key Changes in Configuration Management
-        1. **AI-Assisted Version Control** 
-           - Predictive conflict resolution
-           - Automated dependency management
-           - Smart branching strategies
-        
-        2. **Smart Change Impact Analysis**
-           - Real-time impact visualization
-           - Cross-module dependency tracking
-           - Automatic risk assessment
-        
-        3. **Automated Compliance**
-           - Real-time policy enforcement
-           - Regulatory requirement tracking
-           - Automated audit trails
-        
-        > 💡 **Pro Tip**: Modern CM tools now predict potential conflicts before they occur,
-        > reducing integration issues by 75% compared to 2023.
-        """)
-        
-        # Interactive CM Assessment
-        st.markdown("### 🎯 CM Maturity Assessment")
-        cm_practices = {
-            "Version Control": st.slider("Version Control Maturity", 1, 5, 3, 
-                help="Assess your version control practices from basic to AI-driven"),
-            "Change Management": st.slider("Change Management Maturity", 1, 5, 3,
-                help="Evaluate your change control processes from manual to automated"),
-            "Dependency Tracking": st.slider("Dependency Management Maturity", 1, 5, 3,
-                help="Rate your dependency tracking from basic to predictive")
-        }
-        
-        maturity_score = sum(cm_practices.values()) / len(cm_practices)
-        st.info(f"Your CM Maturity Score: {maturity_score:.1f}/5.0")
+# Page configuration must be called once and at the top
+st.set_page_config(
+    page_title="PyPLM - Product Lifecycle Management",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-    with insight_tabs[1]:
-        st.markdown("""
-        ### AI-Driven PLM Systems
-        
-        #### Key Benefits
-        1. **Predictive Maintenance**
-           - Early issue detection
-           - Automated fix suggestions
-           - Risk mitigation strategies
-        
-        2. **Intelligent Workflows**
-           - Context-aware approvals
-           - Automated impact assessment
-           - Smart notification routing
-        
-        3. **Knowledge Management**
-           - Automated documentation
-           - Context-aware search
-           - Experience capture
-        
-        > 🔮 **Future Insight**: By 2026, 80% of PLM decisions will be AI-assisted,
-        > improving accuracy by 45% and reducing time-to-market by 60%.
-        """)
-        
-        # AI Readiness Check
-        st.markdown("### 🤖 AI Readiness Assessment")
-        with st.form("ai_readiness"):
-            st.checkbox("Data is structured and accessible", 
-                help="Your data should be well-organized and machine-readable")
-            st.checkbox("Processes are well-documented",
-                help="Clear documentation helps AI understand your workflows")
-            st.checkbox("Teams are trained in AI collaboration",
-                help="Team members should understand how to work with AI systems")
-            st.form_submit_button("Check AI Readiness")
+# Application header
+st.markdown(f"""
+    <div style='background-color: #f0f2f6; padding: 1em; border-radius: 5px; margin-bottom: 1em;'>
+        <h1 style='margin:0'>PyPLM</h1>
+        <small style='color: #666;'>Product Lifecycle Management</small>
+        <br>
+        <small style='font-family: monospace;'>
+            🕒 {CURRENT_UTC} UTC • 👤 {CURRENT_USER}
+        </small>
+    </div>
+""", unsafe_allow_html=True)
 
-    with insight_tabs[2]:
-        st.markdown("""
-        ### DevOps Evolution 2025
-        
-        #### Emerging Trends
-        1. **Autonomous Operations**
-           - Self-healing systems
-           - Automated resource optimization
-           - Intelligent scaling
-        
-        2. **Enhanced Collaboration**
-           - AR/VR collaboration spaces
-           - Real-time pair programming
-           - Cross-team insights
-        
-        3. **Predictive Development**
-           - Code suggestion systems
-           - Bug prediction
-           - Performance forecasting
-        
-        > 🚀 **Industry Insight**: DevOps teams using AI-enhanced tools show
-        > 85% faster incident resolution and 90% reduction in false alerts.
-        """)
-        
-        # DevOps Capability Assessment
-        st.markdown("### ⚡ DevOps Capability Check")
-        capabilities = [
-            "Continuous Integration",
-            "Automated Testing",
-            "Infrastructure as Code",
-            "Monitoring & Observability",
-            "Security Automation"
-        ]
-        
-        for cap in capabilities:
-            st.select_slider(cap, 
-                ["Not Started", "Basic", "Intermediate", "Advanced", "AI-Driven"],
-                help=f"Assess your {cap} maturity level")
-
-    # Value of PLM Tooltips
-    st.sidebar.markdown("### 💡 Why PLM Matters")
-    st.sidebar.info("""
-    **Product Lifecycle Management Benefits:**
-    
-    1. **Time-to-Market** ℹ️
-       _Reduce development cycles by 35%_
-    
-    2. **Quality Improvement** ℹ️
-       _Reduce defects by 65%_
-    
-    3. **Cost Reduction** ℹ️
-       _Lower maintenance costs by 45%_
-    
-    4. **Innovation** ℹ️
-       _Increase successful releases by 80%_
-    """)
-
-    # Add progress tracking
-    if 'learning_progress' not in st.session_state:
-        st.session_state.learning_progress = {
-            'topics_completed': set(),
-            'total_time_spent': 0
-        }
-    
-    # Learning progress metrics
-    st.markdown("### 📊 Your Learning Journey")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric(
-            label=show_tooltip("Topics Completed", 
-                "Number of learning topics you've finished"),
-            value=len(st.session_state.learning_progress['topics_completed'])
-        )
-    
-    with col2:
-        st.metric(
-            label=show_tooltip("Time Invested",
-                "Total time spent learning PLM concepts"),
-            value=f"{st.session_state.learning_progress['total_time_spent']} mins"
-        )
-    
-    with col3:
-        st.metric(
-            label=show_tooltip("Expertise Level",
-                "Your current PLM expertise level based on completed topics"),
-            value="Intermediate" if len(st.session_state.learning_progress['topics_completed']) > 5 else "Beginner"
-        )
-
-# Add to main navigation
+# Sidebar navigation
 main_menu = st.sidebar.selectbox(
     "Navigation",
     [
         "🏠 Introduction",
-        "📚 Learning Resources",  # Add this new option
         "📦 Module Management",
         "🔄 Change Control",
-        "🎯 Feature Discovery",
-        "📊 Analytics"
+        "📊 Analytics",
+        "📚 Learning Resources"
     ]
 )
 
-# Update main content router
-if main_menu == "📚 Learning Resources":
-    show_learning_resources()
+# Session info in sidebar
+with st.sidebar:
+    st.markdown("### 🔍 Session Info")
+    st.code(f"""
+UTC Time : {CURRENT_UTC}
+User     : {CURRENT_USER}
+Session  : {st.session_state.user_data['session_id']}
+    """)
 
-# ... (keep rest of the code) ...
+    if st.checkbox("🐛 Debug Mode"):
+        st.write("Session State:", st.session_state)
+
+# Module Management Section
+def show_module_management():
+    st.header("📦 Module Management")
+    
+    tabs = st.tabs(["Create", "Browse", "Learn"])
+    
+    with tabs[0]:
+        with st.form("create_module"):
+            st.subheader("Create New Module")
+            module_name = st.text_input("Module Name", placeholder="e.g., auth-service")
+            module_type = st.selectbox(
+                "Module Type",
+                ["Microservice", "Library", "Plugin"]
+            )
+            submitted = st.form_submit_button("Create Module")
+            if submitted and module_name:
+                st.success(f"Module '{module_name}' created!")
+                st.balloons()
+    
+    with tabs[1]:
+        st.subheader("Browse Modules")
+        # Add module browsing functionality here
+        
+    with tabs[2]:
+        st.subheader("Learning Resources")
+        st.markdown("""
+        ### CM of the Future
+        Learn about modern Configuration Management practices:
+        
+        1. **AI-Assisted Version Control**
+           - Predictive conflict resolution
+           - Smart branching strategies
+        
+        2. **Automated Impact Analysis**
+           - Real-time dependency tracking
+           - Risk assessment
+        
+        3. **Smart Compliance**
+           - Policy enforcement
+           - Audit trails
+        """)
+
+# Change Control Section
+def show_change_control():
+    st.header("🔄 Change Control")
+    
+    tabs = st.tabs(["Submit", "Review"])
+    
+    with tabs[0]:
+        with st.form("submit_change"):
+            st.subheader("Submit Change")
+            change_type = st.selectbox(
+                "Change Type",
+                ["Feature", "Bug Fix", "Enhancement"]
+            )
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                st.success("Change submitted successfully!")
+
+    with tabs[1]:
+        st.subheader("Review Changes")
+        # Add change review functionality here
+
+# Analytics Section
+def show_analytics():
+    st.header("📊 Analytics")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Modules", "5", "+2")
+    with col2:
+        st.metric("Active Changes", "3", "-1")
+
+# Learning Resources Section
+def show_learning_resources():
+    st.header("📚 Learning Resources")
+    
+    st.markdown("""
+    ### Configuration Management Evolution
+    
+    #### Modern CM Practices (2025)
+    1. **AI-Driven Development**
+       - Automated conflict resolution
+       - Smart dependency management
+    
+    2. **Intelligent Change Management**
+       - Impact prediction
+       - Risk assessment
+    
+    3. **Future of PLM**
+       - Predictive maintenance
+       - Automated compliance
+    """)
+    
+    # Interactive learning elements
+    if st.checkbox("Take CM Maturity Assessment"):
+        st.slider("Version Control Maturity", 1, 5, 3)
+        st.slider("Change Management Maturity", 1, 5, 3)
+        if st.button("Calculate Score"):
+            st.success("Your CM Maturity Score: 3.5/5.0")
+
+# Main content router
+if main_menu == "🏠 Introduction":
+    st.header("Welcome to PyPLM")
+    st.markdown("""
+    ### Getting Started
+    1. Create modules in Module Management
+    2. Track changes in Change Control
+    3. Monitor progress in Analytics
+    4. Learn best practices in Learning Resources
+    """)
+
+elif main_menu == "📦 Module Management":
+    show_module_management()
+
+elif main_menu == "🔄 Change Control":
+    show_change_control()
+
+elif main_menu == "📊 Analytics":
+    show_analytics()
+
+elif main_menu == "📚 Learning Resources":
+    show_learning_resources()
