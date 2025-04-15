@@ -1,217 +1,192 @@
-# ... (keep existing imports and initialization) ...
+import streamlit as st
+import pandas as pd
+import time
+from datetime import datetime
 
-CURRENT_UTC = "2025-04-15 13:16:39"
+# Initialize page config first
+st.set_page_config(
+    page_title="PyPLM - Product Lifecycle Management",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Constants
+CURRENT_UTC = "2025-04-15 13:18:19"
 CURRENT_USER = "nexerax-collab"
 
-def show_interactive_intro():
-    st.markdown(f"""
+# Initialize session state
+if 'session_state' not in st.session_state:
+    st.session_state.session_state = {
+        'login': CURRENT_USER,
+        'session_id': f"SESSION_{int(time.time())}",
+        'start_time': CURRENT_UTC,
+        'intro_step': 0,
+        'completed_steps': set(),
+        'module_created': False,
+        'change_submitted': False
+    }
+
+# Sidebar navigation - Define this first before any content
+main_menu = st.sidebar.selectbox(
+    "Navigation",
+    [
+        "🏠 Introduction",
+        "📦 Module Management",
+        "🔄 Change Control",
+        "📊 Analytics",
+        "📚 Learning Resources"
+    ]
+)
+
+# Header section
+st.markdown(f"""
     <div style='background-color: #f0f2f6; padding: 1em; border-radius: 5px; margin-bottom: 1em;'>
-        <h1 style='margin:0'>Welcome to PyPLM</h1>
-        <p style='color: #666;'>Your Software Product Lifecycle Management Hub</p>
+        <h1 style='margin:0'>PyPLM</h1>
+        <p style='color: #666;'>Product Lifecycle Management</p>
         <small style='font-family: monospace;'>
             🕒 {CURRENT_UTC} UTC • 👤 {CURRENT_USER}
         </small>
     </div>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-    # Initialize intro state if needed
-    if 'intro_state' not in st.session_state:
-        st.session_state.intro_state = {
-            'step': 0,
-            'completed_steps': set(),
-            'module_created': False,
-            'change_submitted': False,
-            'tutorial_completed': False
-        }
-
-    # Interactive Workflow
-    steps = [
-        {
-            'title': "🎯 Define Your Goal",
-            'content': show_goal_selector
-        },
-        {
-            'title': "📚 Understanding PLM",
-            'content': show_plm_basics
-        },
-        {
-            'title': "🛠️ First Steps",
-            'content': show_first_steps
-        },
-        {
-            'title': "🎮 Hands-on Practice",
-            'content': show_practice_area
-        }
-    ]
-
-    # Progress bar
-    progress = len(st.session_state.intro_state['completed_steps']) / len(steps)
+def show_interactive_intro():
+    if st.session_state.session_state['intro_step'] == 0:
+        st.markdown("### 🎯 What's your goal today?")
+        goal = st.selectbox(
+            "Select your primary objective:",
+            [
+                "Choose a goal...",
+                "🏗️ Start a new software project",
+                "📈 Improve existing project management",
+                "🔄 Learn about change management",
+                "📚 Understand PLM concepts"
+            ]
+        )
+        
+        if goal != "Choose a goal...":
+            st.info(f"Great choice! Let's help you {goal.split(' ', 1)[1]}")
+            if st.button("Continue ➡️"):
+                st.session_state.session_state['intro_step'] = 1
+                st.rerun()
+    
+    elif st.session_state.session_state['intro_step'] == 1:
+        st.markdown("### 📚 Quick PLM Overview")
+        concept = st.selectbox(
+            "What would you like to learn about first?",
+            [
+                "What is PLM?",
+                "Modules & Components",
+                "Change Management",
+                "Version Control"
+            ]
+        )
+        
+        if concept == "What is PLM?":
+            st.info("""
+            PLM (Product Lifecycle Management) in software:
+            - Manages entire software lifecycle
+            - Tracks changes and versions
+            - Ensures quality and compliance
+            - Facilitates collaboration
+            
+            Traditional PLM terms in Software:
+            - Parts = Modules/Services
+            - Assemblies = Systems/Applications
+            - Bill of Materials = Dependencies
+            """)
+        
+        if st.button("Next Step ➡️"):
+            st.session_state.session_state['intro_step'] = 2
+            st.rerun()
+    
+    elif st.session_state.session_state['intro_step'] == 2:
+        st.markdown("### 🛠️ Let's Create Your First Module")
+        
+        with st.form("first_module"):
+            module_name = st.text_input("Module Name", placeholder="my-first-service")
+            module_type = st.selectbox(
+                "Module Type",
+                [
+                    "🌐 Microservice",
+                    "📚 Library",
+                    "🧩 Plugin"
+                ]
+            )
+            description = st.text_area("Description", placeholder="What does this module do?")
+            
+            submitted = st.form_submit_button("Create Module")
+            if submitted and module_name:
+                st.success("🎉 Congratulations! You've created your first module!")
+                st.session_state.session_state['module_created'] = True
+                st.session_state.session_state['intro_step'] = 3
+                st.rerun()
+    
+    elif st.session_state.session_state['intro_step'] == 3:
+        st.markdown("### 🎯 Next Steps")
+        st.info("""
+        Great progress! Here's what you can do next:
+        1. Explore Module Management
+        2. Learn about Change Control
+        3. Check out Analytics
+        """)
+        
+        if st.button("Start Exploring 🚀"):
+            st.session_state.session_state['intro_step'] = 4
+            st.rerun()
+    
+    # Show progress
+    progress = (st.session_state.session_state['intro_step'] + 1) / 5
     st.progress(progress, f"Progress: {int(progress * 100)}%")
 
-    # Show current step
-    current_step = steps[st.session_state.intro_state['step']]
-    st.subheader(current_step['title'])
-    current_step['content']()
+def show_module_management():
+    st.header("📦 Module Management")
+    tabs = st.tabs(["Create", "Browse", "Learn"])
+    
+    with tabs[0]:
+        show_module_creation()
+    
+    with tabs[1]:
+        show_module_browser()
+    
+    with tabs[2]:
+        show_module_learning()
 
-def show_goal_selector():
-    st.markdown("### What brings you to PyPLM today?")
+def show_change_control():
+    st.header("🔄 Change Control")
+    tabs = st.tabs(["Submit", "Review", "Learn"])
     
-    goal = st.selectbox(
-        "Select your primary goal:",
-        [
-            "Choose a goal...",
-            "🏗️ Start a new software project",
-            "📈 Improve existing project management",
-            "🔄 Learn about change management",
-            "📚 Understand PLM concepts"
-        ]
-    )
+    with tabs[0]:
+        show_change_submission()
     
-    if goal != "Choose a goal...":
-        st.session_state.intro_state['user_goal'] = goal
-        st.session_state.intro_state['completed_steps'].add(0)
-        
-        # Show personalized next steps
-        st.markdown("### Recommended Path")
-        if goal == "🏗️ Start a new software project":
-            st.info("""
-            Great! Let's help you:
-            1. Set up your first module
-            2. Learn about version control
-            3. Establish change management processes
-            """)
-        elif goal == "📈 Improve existing project management":
-            st.info("""
-            Perfect! We'll focus on:
-            1. Analyzing your current setup
-            2. Implementing best practices
-            3. Optimizing workflows
-            """)
-        
-        if st.button("Continue to Next Step ➡️"):
-            st.session_state.intro_state['step'] = 1
-            st.rerun()
+    with tabs[1]:
+        show_change_review()
+    
+    with tabs[2]:
+        show_change_learning()
 
-def show_plm_basics():
-    st.markdown("### Quick PLM Overview")
-    
-    # Interactive PLM concepts
-    concept = st.selectbox(
-        "Choose a concept to learn about:",
-        [
-            "What is PLM?",
-            "Modules & Components",
-            "Change Management",
-            "Version Control",
-            "Configuration Management"
-        ]
-    )
-    
-    # Show concept details
-    if concept == "What is PLM?":
-        st.info("""
-        Product Lifecycle Management (PLM) in software:
-        - Manages the entire lifecycle of your software
-        - Tracks changes and versions
-        - Ensures quality and compliance
-        - Facilitates collaboration
-        """)
-    elif concept == "Modules & Components":
-        st.info("""
-        In software PLM:
-        - Modules = Parts in traditional PLM
-        - Components = Assemblies
-        - Dependencies = Bill of Materials
-        """)
-    
-    # Knowledge check
-    if st.checkbox("Take Quick Knowledge Check"):
-        with st.form("plm_check"):
-            st.radio(
-                "What's the software equivalent of a Bill of Materials?",
-                ["Source code", "Dependencies", "Documentation"]
-            )
-            if st.form_submit_button("Check Answer"):
-                st.success("Correct! Dependencies list is like a Bill of Materials")
-                st.session_state.intro_state['completed_steps'].add(1)
-                if st.button("Continue to First Steps ➡️"):
-                    st.session_state.intro_state['step'] = 2
-                    st.rerun()
+def show_analytics():
+    st.header("📊 Analytics")
+    # Add analytics content here
 
-def show_first_steps():
-    st.markdown("### Let's Get Started")
-    
-    # Quick start actions
-    action = st.selectbox(
-        "Choose your first action:",
-        [
-            "Create a Module",
-            "Submit a Change",
-            "Explore Documentation",
-            "Take the Tutorial"
-        ]
-    )
-    
-    if action == "Create a Module":
-        with st.form("quick_module"):
-            st.text_input("Module Name", placeholder="my-first-module")
-            st.selectbox("Module Type", ["Service", "Library", "Plugin"])
-            if st.form_submit_button("Create"):
-                st.success("🎉 Congratulations! You've created your first module!")
-                st.session_state.intro_state['module_created'] = True
-                st.session_state.intro_state['completed_steps'].add(2)
-                if st.button("Continue to Practice ➡️"):
-                    st.session_state.intro_state['step'] = 3
-                    st.rerun()
-
-def show_practice_area():
-    st.markdown("### Hands-on Practice Area")
-    
-    # Practice scenarios
-    scenario = st.selectbox(
-        "Choose a scenario to practice:",
-        [
-            "Module Management",
-            "Change Control",
-            "Version Management",
-            "Impact Analysis"
-        ]
-    )
-    
-    if scenario == "Module Management":
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            ### Practice Task
-            Create a new module with:
-            1. Clear description
-            2. Proper categorization
-            3. Initial version
-            """)
-        with col2:
-            with st.form("practice_module"):
-                st.text_input("Module Name")
-                st.text_area("Description")
-                st.selectbox("Category", ["Backend", "Frontend", "Data"])
-                if st.form_submit_button("Submit"):
-                    st.success("Great job! You've completed the practice task!")
-                    st.session_state.intro_state['tutorial_completed'] = True
-                    st.session_state.intro_state['completed_steps'].add(3)
-    
-    # Show completion message when all steps are done
-    if len(st.session_state.intro_state['completed_steps']) == 4:
-        st.balloons()
-        st.success("""
-        🎉 Congratulations! You've completed the introduction to PyPLM!
-        
-        Next Steps:
-        1. Explore the Module Management section
-        2. Try out Change Control
-        3. Check the Analytics dashboard
-        """)
-
-# Update main content router
+# Main content router
 if main_menu == "🏠 Introduction":
     show_interactive_intro()
+elif main_menu == "📦 Module Management":
+    show_module_management()
+elif main_menu == "🔄 Change Control":
+    show_change_control()
+elif main_menu == "📊 Analytics":
+    show_analytics()
 
-# ... (rest of the code remains the same)
+# Sidebar info
+with st.sidebar:
+    st.markdown("### 🔍 Session Info")
+    st.code(f"""
+UTC Time : {CURRENT_UTC}
+User     : {CURRENT_USER}
+Session  : {st.session_state.session_state['session_id']}
+    """)
+    
+    # Debug mode
+    if st.checkbox("🐛 Debug Mode"):
+        st.write("Session State:", st.session_state.session_state)
