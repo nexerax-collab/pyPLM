@@ -4,19 +4,15 @@ import json
 
 # Set page configuration
 st.set_page_config(
-    page_title="Software Configuration Audit",
+    page_title="Software FCA & PCA Audit Form",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Sidebar navigation with progress indicator
+# Sidebar navigation
 st.sidebar.title("Navigation")
 pages = ["Introduction", "Project Details", "Functional Configuration Audit (FCA)", "Physical Configuration Audit (PCA)", "Audit Summary"]
 selected_page = st.sidebar.radio("Go to", pages)
-
-# Progress bar based on navigation
-progress = pages.index(selected_page) / (len(pages) - 1)
-st.sidebar.progress(progress)
 
 # Common UI elements
 rating_options = ["Yes", "Partial", "No"]
@@ -35,10 +31,7 @@ def audit_section(title, questions_with_examples):
             st.caption(f"Example: {example}")
             response = st.radio("Select your answer:", rating_options, key=f"{title}_{idx}")
         with col2:
-            comment = st.text_area("Comments / Evidence (Required for 'Partial' or 'No'):", key=f"{title}_comment_{idx}")
-            # Require comments for "Partial" or "No"
-            if response in ["Partial", "No"] and not comment.strip():
-                st.warning(f"Please provide a comment for question {idx}.")
+            comment = st.text_area("Comments / Evidence:", key=f"{title}_comment_{idx}")
         responses.append({"Question": q, "Rating": response, "Comment": comment, "Weight": rating_weights[response]})
     return responses
 
@@ -58,7 +51,7 @@ def calculate_result(score, total):
 
 # Page: Introduction
 if selected_page == "Introduction":
-    st.title("🚗 Software Configuration Audit")
+    st.title("🚗 ECU Software FCA & PCA Audit Form")
     st.markdown("""
     This form supports internal CM audits software during development and release. 
     It follows configuration management standards such as ISO 10007, EIA-649C, and IEEE 828.
@@ -166,16 +159,29 @@ elif selected_page == "Audit Summary":
         st.write(f"**Color Indicator:** {color}")
         st.write(f"**Follow-up Recommendations:** {follow_up}")
 
-    # Handle empty DataFrames gracefully
-    if fca_df.empty and pca_df.empty:
-        st.warning("No data to export. Please complete the audit sections before exporting.")
-    else:
-        # Export Options
-        st.markdown("### Export Options")
-        combined_csv = pd.concat([fca_df, pca_df]).to_csv(index=False)
-        st.download_button(
-            label="Download Combined Report as CSV",
-            data=combined_csv,
-            file_name="Audit_Report.csv",
-            mime="text/csv"
-        )
+    # Export Options
+    st.markdown("### Export Options")
+    fca_json = fca_df.to_json(orient="records")
+    pca_json = pca_df.to_json(orient="records")
+
+    st.download_button(
+        label="Download FCA as JSON",
+        data=fca_json,
+        file_name="FCA_Responses.json",
+        mime="application/json"
+    )
+
+    st.download_button(
+        label="Download PCA as JSON",
+        data=pca_json,
+        file_name="PCA_Responses.json",
+        mime="application/json"
+    )
+
+    combined_csv = fca_df.append(pca_df).to_csv(index=False)
+    st.download_button(
+        label="Download Combined Report as CSV",
+        data=combined_csv,
+        file_name="Audit_Report.csv",
+        mime="text/csv"
+    )
