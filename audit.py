@@ -39,6 +39,8 @@ def calculate_result(score, total):
     """
     Calculate the result based on the total score and assign a color.
     """
+    if total == 0:
+        return "Gray", "Not Applicable", "No questions answered"
     percentage = (score / total) * 100
     if percentage >= 80:
         return "Green", "Pass", "No follow-up needed"
@@ -149,10 +151,13 @@ elif selected_page == "Audit Summary":
         st.dataframe(pca_df)
 
     # Display summary
-    st.markdown("#### Summary")
-    st.write(f"**Overall Status:** {recommendation}")
-    st.write(f"**Color Indicator:** {color}")
-    st.write(f"**Follow-up Recommendations:** {follow_up}")
+    if total_score == 0:
+        st.warning("No questions were answered. Please complete the audit sections.")
+    else:
+        st.markdown("#### Summary")
+        st.write(f"**Overall Status:** {recommendation}")
+        st.write(f"**Color Indicator:** {color}")
+        st.write(f"**Follow-up Recommendations:** {follow_up}")
 
     # Export Options
     st.markdown("### Export Options")
