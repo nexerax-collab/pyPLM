@@ -4,7 +4,7 @@ import json
 
 # Set page configuration
 st.set_page_config(
-    page_title="ECU Software FCA & PCA Audit Form",
+    page_title="Software FCA & PCA Audit Form",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -18,16 +18,21 @@ selected_page = st.sidebar.radio("Go to", pages)
 rating_options = ["Yes", "Partial", "No"]
 rating_weights = {"Yes": 2, "Partial": 1, "No": 0}
 
-def audit_section(title, questions):
+def audit_section(title, questions_with_examples):
     """
-    Helper function to generate audit questions and capture responses.
+    Helper function to generate audit questions with examples and capture responses.
     """
     st.subheader(title)
     responses = []
-    for idx, q in enumerate(questions, 1):
+    for idx, (q, example) in enumerate(questions_with_examples, 1):
         col1, col2 = st.columns([2, 1])
         with col1:
-            response = st.radio(f"{idx}. {q}", rating_options, key=f"{title}_{idx}")
+            response = st.radio(
+                f"{idx}. {q} [ℹ️](#)",
+                rating_options,
+                key=f"{title}_{idx}",
+                help=example
+            )
         with col2:
             comment = st.text_area("Comments / Evidence", key=f"{title}_comment_{idx}")
         responses.append({"Question": q, "Rating": response, "Comment": comment, "Weight": rating_weights[response]})
@@ -72,26 +77,56 @@ elif selected_page == "Project Details":
 # Page: FCA
 elif selected_page == "Functional Configuration Audit (FCA)":
     st.title("Functional Configuration Audit (FCA)")
-    fca_questions = [
-        "Is the software’s functional baseline clearly documented and under change control?",
-        "Does the software implement all and only the approved functional requirements?",
-        "Is there full bi-directional traceability between requirements, design, implementation, and tests (e.g., in DOORS)?",
-        "Are all test results complete and reviewed, with no open issues or unapproved deviations?",
-        "Have defined development and CM processes been followed (e.g., reviews, approvals, versioning)?"
+    fca_questions_with_examples = [
+        (
+            "Is the software’s functional baseline clearly documented and under change control?",
+            "Example: Requirements baselines from DOORS, versioned functional specifications."
+        ),
+        (
+            "Does the software implement all and only the approved functional requirements?",
+            "Example: Cross-check functional specifications with requirements traceability matrix."
+        ),
+        (
+            "Is there full bi-directional traceability between requirements, design, implementation, and tests (e.g., in DOORS)?",
+            "Example: Traceability reports showing links between requirements, design documents, and test cases."
+        ),
+        (
+            "Are all test results complete and reviewed, with no open issues or unapproved deviations?",
+            "Example: Reviewed test plans, execution reports, and issue resolution logs."
+        ),
+        (
+            "Have defined development and CM processes been followed (e.g., reviews, approvals, versioning)?",
+            "Example: Evidence of code reviews, configuration management logs, and version-controlled repositories."
+        )
     ]
-    fca_responses = audit_section("Functional Configuration Audit (FCA)", fca_questions)
+    fca_responses = audit_section("Functional Configuration Audit (FCA)", fca_questions_with_examples)
 
 # Page: PCA
 elif selected_page == "Physical Configuration Audit (PCA)":
     st.title("Physical Configuration Audit (PCA)")
-    pca_questions = [
-        "Is the final product baseline established and complete, with all configuration items identified and versioned?",
-        "Can the delivered binary be traced to a specific, immutable repository state (e.g., Git tag/SVN label)?",
-        "Are all changes included in the release documented and approved (e.g., via CCB or change requests)?",
-        "Are supporting documents (design, ICDs, manuals) updated and consistent with the delivered software?",
-        "Are regulatory, licensing, and third-party software obligations satisfied and documented?"
+    pca_questions_with_examples = [
+        (
+            "Is the final product baseline established and complete, with all configuration items identified and versioned?",
+            "Example: Baseline configuration items, version control repository snapshots."
+        ),
+        (
+            "Can the delivered binary be traced to a specific, immutable repository state (e.g., Git tag/SVN label)?",
+            "Example: Git repository tags or SVN labels linked to the binary file."
+        ),
+        (
+            "Are all changes included in the release documented and approved (e.g., via CCB or change requests)?",
+            "Example: Change control board (CCB) meeting minutes, approved change requests."
+        ),
+        (
+            "Are supporting documents (design, ICDs, manuals) updated and consistent with the delivered software?",
+            "Example: Updated design documents, interface control documents (ICDs), and user manuals."
+        ),
+        (
+            "Are regulatory, licensing, and third-party software obligations satisfied and documented?",
+            "Example: License compliance reports, evidence of regulatory approvals."
+        )
     ]
-    pca_responses = audit_section("Physical Configuration Audit (PCA)", pca_questions)
+    pca_responses = audit_section("Physical Configuration Audit (PCA)", pca_questions_with_examples)
 
 # Page: Audit Summary
 elif selected_page == "Audit Summary":
