@@ -1,187 +1,450 @@
 import streamlit as st
 import pandas as pd
 import json
+from datetime import datetime
+from typing import List, Dict, Tuple, Optional
+import uuid
+from dataclasses import dataclass
+from enum import Enum
 
-# Set page configuration
-st.set_page_config(
-    page_title="Software FCA & PCA Audit Form",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Custom types and data structures
+class AuditStatus(Enum):
+    PASS = "Pass"
+    CONDITIONAL = "Conditional"
+    FAIL = "Fail"
+    NOT_APPLICABLE = "Not Applicable"
 
-# Sidebar navigation
-st.sidebar.title("Navigation")
-pages = ["Introduction", "Project Details", "Functional Configuration Audit (FCA)", "Physical Configuration Audit (PCA)", "Audit Summary"]
-selected_page = st.sidebar.radio("Go to", pages)
+@dataclass
+class AuditQuestion:
+    id: str
+    question: str
+    example: str
+    category: str
 
-# Common UI elements
-rating_options = ["Yes", "Partial", "No"]
-rating_weights = {"Yes": 2, "Partial": 1, "No": 0}
+@dataclass
+class AuditResponse:
+    question_id: str
+    rating: str
+    comment: str
+    timestamp: str
+    auditor: str
 
-def audit_section(title, questions_with_examples):
-    """
-    Helper function to generate audit questions with examples and capture responses.
-    """
-    st.subheader(title)
-    responses = []
-    for idx, (q, example) in enumerate(questions_with_examples, 1):
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown(f"**{idx}. {q}**")
-            st.caption(f"Example: {example}")
-            response = st.radio("Select your answer:", rating_options, key=f"{title}_{idx}")
-        with col2:
-            comment = st.text_area("Comments / Evidence:", key=f"{title}_comment_{idx}")
-        responses.append({"Question": q, "Rating": response, "Comment": comment, "Weight": rating_weights[response]})
-    return responses
+class AuditConfiguration:
+    def __init__(self):
+        self.rating_options = ["Yes", "Partial", "No"]
+        self.rating_weights = {"Yes": 2, "Partial": 1, "No": 0}
+        self.success_threshold = 80
+        self.warning_threshold = 50
 
-def calculate_result(score, total):
-    """
-    Calculate the result based on the total score and assign a color.
-    """
-    if total == 0:
-        return "Gray", "Not Applicable", "No questions answered"
-    percentage = (score / total) * 100
-    if percentage >= 80:
-        return "Green", "Pass", "No follow-up needed"
-    elif 50 <= percentage < 80:
-        return "Yellow", "Conditional", "Recommend review and partial corrections"
-    else:
-        return "Red", "Fail", "Immediate action required to address major issues"
+class AuditManager:
+    def __init__(self):
+        self.config = AuditConfiguration()
+        
+    def calculate_score(self, responses: List[Dict]) -> Tuple[float, AuditStatus, str]:
+        if not responses:
+            return 0, AuditStatus.NOT_APPLICABLE, "No questions answered"
+            
+        total_possible = len(responses) * 2  # Maximum score possible
+        actual_score = sum(self.config.rating_weights[r["Rating"]] for r in responses)
+        
+        if total_possible == 0:
+            return 0, AuditStatus.NOT_APPLICABLE, "No questions answered"
+            
+        percentage = (actual_score / total_possible) * 100
+        
+        if percentage >= self.config.success_threshold:
+            return percentage, AuditStatus.PASS, "No follow-up needed"
+        elif percentage >= self.config.warning_threshold:
+            return percentage, AuditStatus.CONDITIONAL, "Review and corrections recommended"
+        else:
+            return percentage, AuditStatus.FAIL, "Immediate action required"
 
-# Page: Introduction
-if selected_page == "Introduction":
-    st.title("🚗 ECU Software FCA & PCA Audit Form")
+def init_session_state():
+    """Initialize session state variables"""
+    if 'project_details' not in st.session_state:
+        st.session_state.project_details = {
+            'project_name': '',
+            'audit_date': datetime.now().date(),
+            'auditor': '',
+            'scope': '',
+            'version': ''
+        }
+    if 'audit_responses' not in st.session_state:
+        st.session_state.audit_responses = {'fca': [], 'pca': []}
+
+def set_page_config():
+    """Configure the Streamlit page"""
+    st.set_page_config(
+        page_title="Software Configuration Audit Tool",
+        page_icon="🔍",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
+    # Add custom CSS
     st.markdown("""
-    This form supports internal CM audits software during development and release. 
-    It follows configuration management standards such as ISO 10007, EIA-649C, and IEEE 828.
+        <style>
+        .main {max-width: 1200px; padding: 2rem;}
+        .stButton button {width: 100%;}
+        .audit-header {background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem;}
+        .status-pass {color: green; font-weight: bold;}
+        .status-conditional {color: orange; font-weight: bold;}
+        .status-fail {color: red; font-weight: bold;}
+        </style>
+    """, unsafe_allow_html=True)
 
-    ### Functional Configuration Audit (FCA)
-    Verifies the specified software meets approved functional and performance requirements through traceability, 
-    test results, and adherence to development processes.
+def create_sidebar():
+    """Create and handle sidebar navigation"""
+    st.sidebar.title("Audit Navigation")
+    pages = {
+        "Introduction": "📚",
+        "Project Details": "📋",
+        "Functional Configuration Audit": "⚙️",
+        "Physical Configuration Audit": "📦",
+        "Audit Summary": "📊"
+    }
+    
+    selected_page = st.sidebar.radio(
+        "Select Section",
+        list(pages.keys()),
+        format_func=lambda x: f"{pages[x]} {x}"
+    )
+    
+    return selected_page
 
-    ### Physical Configuration Audit (PCA)
-    Confirms the released software and its documentation match the approved baseline, including version control, 
-    approved changes, and license compliance.
+def render_introduction():
+    """Render the introduction page"""
+    st.title("Software Configuration Audit Tool")
+    st.markdown("""
+    ### Purpose
+    This tool supports comprehensive software configuration audits during development 
+    and release phases. It follows industry standards including:
+    - ISO 10007
+    - IEEE 828
+    - CMMI Configuration Management
+    
+    ### Audit Types
+    
+    #### 🔍 Functional Configuration Audit (FCA)
+    Verifies that:
+    - Software meets approved requirements
+    - Test results demonstrate compliance
+    - Development processes were followed
+    
+    #### 📦 Physical Configuration Audit (PCA)
+    Confirms that:
+    - Released software matches approved baseline
+    - Documentation is complete and accurate
+    - All changes are properly tracked and approved
+    
+    ### How to Use
+    1. Complete the Project Details section
+    2. Answer all questions in both FCA and PCA sections
+    3. Review the summary and export results as needed
     """)
 
-# Page: Project Details
-elif selected_page == "Project Details":
+def render_project_details():
+    """Render and handle project details form"""
     st.title("Project Details")
-    st.markdown("### Provide the details of the project being audited.")
-    project_name = st.text_input("Project Name")
-    audit_date = st.date_input("Audit Date")
-    auditor = st.text_input("Auditor(s)")
+    
+    with st.form("project_details_form"):
+        st.session_state.project_details['project_name'] = st.text_input(
+            "Project Name",
+            value=st.session_state.project_details.get('project_name', '')
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.session_state.project_details['audit_date'] = st.date_input(
+                "Audit Date",
+                value=st.session_state.project_details.get('audit_date', datetime.now().date())
+            )
+            st.session_state.project_details['version'] = st.text_input(
+                "Software Version",
+                value=st.session_state.project_details.get('version', '')
+            )
+        
+        with col2:
+            st.session_state.project_details['auditor'] = st.text_input(
+                "Auditor Name",
+                value=st.session_state.project_details.get('auditor', '')
+            )
+            st.session_state.project_details['scope'] = st.text_area(
+                "Audit Scope",
+                value=st.session_state.project_details.get('scope', '')
+            )
+        
+        if st.form_submit_button("Save Project Details"):
+            st.success("Project details saved successfully!")
 
-# Page: FCA
-elif selected_page == "Functional Configuration Audit (FCA)":
-    st.title("Functional Configuration Audit (FCA)")
-    fca_questions_with_examples = [
-        (
-            "Is the software’s functional baseline clearly documented and under change control?",
-            "Requirements baselines from DOORS, versioned functional specifications."
+def get_fca_questions() -> List[AuditQuestion]:
+    """Define FCA questions"""
+    return [
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Is the software's functional baseline documented and under change control?",
+            example="Requirements baseline in issue tracking system, versioned specifications",
+            category="Requirements"
         ),
-        (
-            "Does the software implement all and only the approved functional requirements?",
-            "Cross-check functional specifications with requirements traceability matrix."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Is there complete traceability between requirements, code, and tests?",
+            example="Traceability matrix showing links between requirements and test cases",
+            category="Traceability"
         ),
-        (
-            "Is there full bi-directional traceability between requirements, design, implementation, and tests (e.g., in DOORS)?",
-            "Traceability reports showing links between requirements, design documents, and test cases."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Are all test results complete and reviewed?",
+            example="Test execution reports, issue resolution documentation",
+            category="Testing"
         ),
-        (
-            "Are all test results complete and reviewed, with no open issues or unapproved deviations?",
-            "Reviewed test plans, execution reports, and issue resolution logs."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Have all required reviews and approvals been completed?",
+            example="Code review records, approval documentation",
+            category="Process"
         ),
-        (
-            "Have defined development and CM processes been followed (e.g., reviews, approvals, versioning)?",
-            "Evidence of code reviews, configuration management logs, and version-controlled repositories."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Is the development environment properly configured and documented?",
+            example="Build configuration files, deployment scripts",
+            category="Environment"
         )
     ]
-    fca_responses = audit_section("Functional Configuration Audit (FCA)", fca_questions_with_examples)
 
-# Page: PCA
-elif selected_page == "Physical Configuration Audit (PCA)":
-    st.title("Physical Configuration Audit (PCA)")
-    pca_questions_with_examples = [
-        (
-            "Is the final product baseline established and complete, with all configuration items identified and versioned?",
-            "Baseline configuration items, version control repository snapshots."
+def get_pca_questions() -> List[AuditQuestion]:
+    """Define PCA questions"""
+    return [
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Is the software baseline complete and properly versioned?",
+            example="Tagged release in version control, complete artifact list",
+            category="Baseline"
         ),
-        (
-            "Can the delivered binary be traced to a specific, immutable repository state (e.g., Git tag/SVN label)?",
-            "Git repository tags or SVN labels linked to the binary file."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Are all changes properly documented and approved?",
+            example="Change request records, approval documentation",
+            category="Changes"
         ),
-        (
-            "Are all changes included in the release documented and approved (e.g., via CCB or change requests)?",
-            "Change control board (CCB) meeting minutes, approved change requests."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Is the documentation current and consistent?",
+            example="Updated technical documentation, release notes",
+            category="Documentation"
         ),
-        (
-            "Are supporting documents (design, ICDs, manuals) updated and consistent with the delivered software?",
-            "Updated design documents, interface control documents (ICDs), and user manuals."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Are all third-party components properly licensed and documented?",
+            example="License inventory, compliance documentation",
+            category="Licensing"
         ),
-        (
-            "Are regulatory, licensing, and third-party software obligations satisfied and documented?",
-            "License compliance reports, evidence of regulatory approvals."
+        AuditQuestion(
+            id=str(uuid.uuid4()),
+            question="Is the build and release process documented and repeatable?",
+            example="Build instructions, release procedure documentation",
+            category="Build"
         )
     ]
-    pca_responses = audit_section("Physical Configuration Audit (PCA)", pca_questions_with_examples)
 
-# Page: Audit Summary
-elif selected_page == "Audit Summary":
+def render_audit_section(title: str, questions: List[AuditQuestion], audit_type: str):
+    """Render an audit section with questions and capture responses"""
+    st.title(title)
+    
+    responses = []
+    for question in questions:
+        with st.expander(f"{question.category}: {question.question}"):
+            st.caption(f"Example: {question.example}")
+            
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                response = st.radio(
+                    "Rating:",
+                    AuditConfiguration().rating_options,
+                    key=f"{question.id}_rating"
+                )
+            
+            with col2:
+                comment = st.text_area(
+                    "Evidence and Comments:",
+                    key=f"{question.id}_comment"
+                )
+            
+            responses.append({
+                "Question_ID": question.id,
+                "Category": question.category,
+                "Question": question.question,
+                "Rating": response,
+                "Comment": comment,
+                "Timestamp": datetime.now().isoformat(),
+                "Auditor": st.session_state.project_details.get('auditor', '')
+            })
+    
+    if st.button(f"Save {audit_type} Responses"):
+        st.session_state.audit_responses[audit_type.lower()] = responses
+        st.success(f"{audit_type} responses saved successfully!")
+
+def render_summary():
+    """Render the audit summary page"""
     st.title("Audit Summary")
-    st.markdown("### 📝 Summary of Audit Findings")
-
-    # Convert responses to DataFrames for display and calculations
-    fca_df = pd.DataFrame(fca_responses) if 'fca_responses' in locals() else pd.DataFrame()
-    pca_df = pd.DataFrame(pca_responses) if 'pca_responses' in locals() else pd.DataFrame()
-
-    # Calculate scores
-    fca_score = fca_df["Weight"].sum() if not fca_df.empty else 0
-    pca_score = pca_df["Weight"].sum() if not pca_df.empty else 0
-    total_score = len(fca_df) * 2 + len(pca_df) * 2
-    color, recommendation, follow_up = calculate_result(fca_score + pca_score, total_score)
-
-    # Display FCA and PCA responses
-    if not fca_df.empty:
-        st.markdown("#### FCA Responses")
-        st.dataframe(fca_df)
-    if not pca_df.empty:
-        st.markdown("#### PCA Responses")
-        st.dataframe(pca_df)
-
-    # Display summary
-    if total_score == 0:
-        st.warning("No questions were answered. Please complete the audit sections.")
-    else:
-        st.markdown("#### Summary")
-        st.write(f"**Overall Status:** {recommendation}")
-        st.write(f"**Color Indicator:** {color}")
-        st.write(f"**Follow-up Recommendations:** {follow_up}")
-
-    # Export Options
+    
+    # Project Information
+    st.markdown("### Project Information")
+    project_df = pd.DataFrame([st.session_state.project_details])
+    st.dataframe(project_df)
+    
+    # Calculate and display results
+    audit_manager = AuditManager()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### FCA Results")
+        if st.session_state.audit_responses['fca']:
+            fca_score, fca_status, fca_message = audit_manager.calculate_score(
+                st.session_state.audit_responses['fca']
+            )
+            st.metric("FCA Score", f"{fca_score:.1f}%")
+            st.markdown(f"Status: **{fca_status.value}**")
+            st.info(fca_message)
+    
+    with col2:
+        st.markdown("### PCA Results")
+        if st.session_state.audit_responses['pca']:
+            pca_score, pca_status, pca_message = audit_manager.calculate_score(
+                st.session_state.audit_responses['pca']
+            )
+            st.metric("PCA Score", f"{pca_score:.1f}%")
+            st.markdown(f"Status: **{pca_status.value}**")
+            st.info(pca_message)
+    
+    # Export options
     st.markdown("### Export Options")
-    fca_json = fca_df.to_json(orient="records")
-    pca_json = pca_df.to_json(orient="records")
+    
+    col3, col4, col5 = st.columns(3)
+    
+    with col3:
+        if st.button("Export as JSON"):
+            export_data = {
+                "project_details": st.session_state.project_details,
+                "audit_responses": st.session_state.audit_responses,
+                "export_date": datetime.now().isoformat()
+            }
+            st.download_button(
+                "Download JSON",
+                data=json.dumps(export_data, indent=2),
+                file_name=f"audit_report_{datetime.now().strftime('%Y%m%d')}.json",
+                mime="application/json"
+            )
+    
+    with col4:
+        if st.button("Export as CSV"):
+            # Combine FCA and PCA responses
+            all_responses = (
+                pd.DataFrame(st.session_state.audit_responses['fca'] +
+                           st.session_state.audit_responses['pca'])
+            )
+            st.download_button(
+                "Download CSV",
+                data=all_responses.to_csv(index=False),
+                file_name=f"audit_report_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv"
+            )
+    
+    with col5:
+        if st.button("Export as HTML"):
+            # Generate HTML report
+            html_content = generate_html_report(
+                st.session_state.project_details,
+                st.session_state.audit_responses
+            )
+            st.download_button(
+                "Download HTML",
+                data=html_content,
+                file_name=f"audit_report_{datetime.now().strftime('%Y%m%d')}.html",
+                mime="text/html"
+            )
 
-    st.download_button(
-        label="Download FCA as JSON",
-        data=fca_json,
-        file_name="FCA_Responses.json",
-        mime="application/json"
+def generate_html_report(project_details: Dict, audit_responses: Dict) -> str:
+    """Generate an HTML report from the audit data"""
+    html_template = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Software Configuration Audit Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 2rem; }
+            .header { background-color: #f8f9fa; padding: 1rem; margin-bottom: 2rem; }
+            .section { margin-bottom: 2rem; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f8f9fa; }
+            .pass { color: green; }
+            .fail { color: red; }
+            .conditional { color: orange; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Software Configuration Audit Report</h1>
+            <p>Generated: {date}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Project Details</h2>
+            {project_details_table}
+        </div>
+        
+        <div class="section">
+            <h2>Functional Configuration Audit</h2>
+            {fca_table}
+        </div>
+        
+        <div class="section">
+            <h2>Physical Configuration Audit</h2>
+            {pca_table}
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Convert data to HTML tables
+    project_df = pd.DataFrame([project_details])
+    fca_df = pd.DataFrame(audit_responses['fca'])
+    pca_df = pd.DataFrame(audit_responses['pca'])
+    
+    return html_template.format(
+        date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        project_details_table=project_df.to_html(index=False),
+        fca_table=fca_df.to_html(index=False),
+        pca_table=pca_df.to_html(index=False)
     )
 
-    st.download_button(
-        label="Download PCA as JSON",
-        data=pca_json,
-        file_name="PCA_Responses.json",
-        mime="application/json"
-    )
+def main():
+    """Main application entry point"""
+    init_session_state()
+    set_page_config()
+    
+    selected_page = create_sidebar()
+    
+    if selected_page == "Introduction":
+        render_introduction()
+    elif selected_page == "Project Details":
+        render_project_details()
+    elif selected_page == "Functional Configuration Audit":
+        render_audit_section(
+            "Functional Configuration Audit (FCA)",
+            get_fca_questions(),
+            "FCA"
+        )
+    elif selected_page == "Physical Configuration Audit":
+        render_audit_section(
+            "Physical Configuration Audit (PCA)",
+            get_pca_questions(),
+            "PCA"
+        )
+    else:  # Audit Summary
+        render_summary()
 
-    combined_csv = fca_df.append(pca_df).to_csv(index=False)
-    st.download_button(
-        label="Download Combined Report as CSV",
-        data=combined_csv,
-        file_name="Audit_Report.csv",
-        mime="text/csv"
-    )
+if __name__ == "__main__":
+    main()
