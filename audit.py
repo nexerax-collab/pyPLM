@@ -27,14 +27,11 @@ def audit_section(title, questions_with_examples):
     for idx, (q, example) in enumerate(questions_with_examples, 1):
         col1, col2 = st.columns([2, 1])
         with col1:
-            response = st.radio(
-                f"{idx}. {q} [ℹ️](#)",
-                rating_options,
-                key=f"{title}_{idx}",
-                help=example
-            )
+            st.markdown(f"**{idx}. {q}**")
+            st.caption(f"Example: {example}")
+            response = st.radio("Select your answer:", rating_options, key=f"{title}_{idx}")
         with col2:
-            comment = st.text_area("Comments / Evidence", key=f"{title}_comment_{idx}")
+            comment = st.text_area("Comments / Evidence:", key=f"{title}_comment_{idx}")
         responses.append({"Question": q, "Rating": response, "Comment": comment, "Weight": rating_weights[response]})
     return responses
 
@@ -80,23 +77,23 @@ elif selected_page == "Functional Configuration Audit (FCA)":
     fca_questions_with_examples = [
         (
             "Is the software’s functional baseline clearly documented and under change control?",
-            "Example: Requirements baselines from DOORS, versioned functional specifications."
+            "Requirements baselines from DOORS, versioned functional specifications."
         ),
         (
             "Does the software implement all and only the approved functional requirements?",
-            "Example: Cross-check functional specifications with requirements traceability matrix."
+            "Cross-check functional specifications with requirements traceability matrix."
         ),
         (
             "Is there full bi-directional traceability between requirements, design, implementation, and tests (e.g., in DOORS)?",
-            "Example: Traceability reports showing links between requirements, design documents, and test cases."
+            "Traceability reports showing links between requirements, design documents, and test cases."
         ),
         (
             "Are all test results complete and reviewed, with no open issues or unapproved deviations?",
-            "Example: Reviewed test plans, execution reports, and issue resolution logs."
+            "Reviewed test plans, execution reports, and issue resolution logs."
         ),
         (
             "Have defined development and CM processes been followed (e.g., reviews, approvals, versioning)?",
-            "Example: Evidence of code reviews, configuration management logs, and version-controlled repositories."
+            "Evidence of code reviews, configuration management logs, and version-controlled repositories."
         )
     ]
     fca_responses = audit_section("Functional Configuration Audit (FCA)", fca_questions_with_examples)
@@ -107,23 +104,23 @@ elif selected_page == "Physical Configuration Audit (PCA)":
     pca_questions_with_examples = [
         (
             "Is the final product baseline established and complete, with all configuration items identified and versioned?",
-            "Example: Baseline configuration items, version control repository snapshots."
+            "Baseline configuration items, version control repository snapshots."
         ),
         (
             "Can the delivered binary be traced to a specific, immutable repository state (e.g., Git tag/SVN label)?",
-            "Example: Git repository tags or SVN labels linked to the binary file."
+            "Git repository tags or SVN labels linked to the binary file."
         ),
         (
             "Are all changes included in the release documented and approved (e.g., via CCB or change requests)?",
-            "Example: Change control board (CCB) meeting minutes, approved change requests."
+            "Change control board (CCB) meeting minutes, approved change requests."
         ),
         (
             "Are supporting documents (design, ICDs, manuals) updated and consistent with the delivered software?",
-            "Example: Updated design documents, interface control documents (ICDs), and user manuals."
+            "Updated design documents, interface control documents (ICDs), and user manuals."
         ),
         (
             "Are regulatory, licensing, and third-party software obligations satisfied and documented?",
-            "Example: License compliance reports, evidence of regulatory approvals."
+            "License compliance reports, evidence of regulatory approvals."
         )
     ]
     pca_responses = audit_section("Physical Configuration Audit (PCA)", pca_questions_with_examples)
@@ -132,58 +129,54 @@ elif selected_page == "Physical Configuration Audit (PCA)":
 elif selected_page == "Audit Summary":
     st.title("Audit Summary")
     st.markdown("### 📝 Summary of Audit Findings")
-    overall_status = st.selectbox("Overall Audit Status (Optional)", ["Pass", "Conditional", "Fail"])
-    summary = st.text_area("Summary of Issues and Actions")
 
-    if st.button("Generate Report"):
-        # Convert responses to DataFrames for display and calculations
-        fca_df = pd.DataFrame(fca_responses) if 'fca_responses' in locals() else pd.DataFrame()
-        pca_df = pd.DataFrame(pca_responses) if 'pca_responses' in locals() else pd.DataFrame()
+    # Convert responses to DataFrames for display and calculations
+    fca_df = pd.DataFrame(fca_responses) if 'fca_responses' in locals() else pd.DataFrame()
+    pca_df = pd.DataFrame(pca_responses) if 'pca_responses' in locals() else pd.DataFrame()
 
-        # Calculate scores
-        fca_score = fca_df["Weight"].sum() if not fca_df.empty else 0
-        pca_score = pca_df["Weight"].sum() if not pca_df.empty else 0
-        total_score = len(fca_df) * 2 + len(pca_df) * 2
-        color, recommendation, follow_up = calculate_result(fca_score + pca_score, total_score)
+    # Calculate scores
+    fca_score = fca_df["Weight"].sum() if not fca_df.empty else 0
+    pca_score = pca_df["Weight"].sum() if not pca_df.empty else 0
+    total_score = len(fca_df) * 2 + len(pca_df) * 2
+    color, recommendation, follow_up = calculate_result(fca_score + pca_score, total_score)
 
-        # Display FCA and PCA responses
-        if not fca_df.empty:
-            st.markdown("#### FCA Responses")
-            st.dataframe(fca_df)
-        if not pca_df.empty:
-            st.markdown("#### PCA Responses")
-            st.dataframe(pca_df)
+    # Display FCA and PCA responses
+    if not fca_df.empty:
+        st.markdown("#### FCA Responses")
+        st.dataframe(fca_df)
+    if not pca_df.empty:
+        st.markdown("#### PCA Responses")
+        st.dataframe(pca_df)
 
-        # Display summary
-        st.markdown("#### Summary")
-        st.write(f"**Overall Status:** {recommendation}")
-        st.write(f"**Color Indicator:** {color}")
-        st.write(f"**Follow-up Recommendations:** {follow_up}")
-        st.write(summary)
+    # Display summary
+    st.markdown("#### Summary")
+    st.write(f"**Overall Status:** {recommendation}")
+    st.write(f"**Color Indicator:** {color}")
+    st.write(f"**Follow-up Recommendations:** {follow_up}")
 
-        # Export Options
-        st.markdown("### Export Options")
-        fca_json = fca_df.to_json(orient="records")
-        pca_json = pca_df.to_json(orient="records")
+    # Export Options
+    st.markdown("### Export Options")
+    fca_json = fca_df.to_json(orient="records")
+    pca_json = pca_df.to_json(orient="records")
 
-        st.download_button(
-            label="Download FCA as JSON",
-            data=fca_json,
-            file_name="FCA_Responses.json",
-            mime="application/json"
-        )
+    st.download_button(
+        label="Download FCA as JSON",
+        data=fca_json,
+        file_name="FCA_Responses.json",
+        mime="application/json"
+    )
 
-        st.download_button(
-            label="Download PCA as JSON",
-            data=pca_json,
-            file_name="PCA_Responses.json",
-            mime="application/json"
-        )
+    st.download_button(
+        label="Download PCA as JSON",
+        data=pca_json,
+        file_name="PCA_Responses.json",
+        mime="application/json"
+    )
 
-        combined_csv = fca_df.append(pca_df).to_csv(index=False)
-        st.download_button(
-            label="Download Combined Report as CSV",
-            data=combined_csv,
-            file_name="Audit_Report.csv",
-            mime="text/csv"
-        )
+    combined_csv = fca_df.append(pca_df).to_csv(index=False)
+    st.download_button(
+        label="Download Combined Report as CSV",
+        data=combined_csv,
+        file_name="Audit_Report.csv",
+        mime="text/csv"
+    )
