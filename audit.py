@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
-import xlsxwriter
-from fpdf import FPDF
+import json
 
 # Set page configuration
 st.set_page_config(
@@ -13,7 +11,7 @@ st.set_page_config(
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
-pages = ["Project Details", "Functional Configuration Audit (FCA)", "Physical Configuration Audit (PCA)", "Audit Summary"]
+pages = ["Introduction", "Project Details", "Functional Configuration Audit (FCA)", "Physical Configuration Audit (PCA)", "Audit Summary"]
 selected_page = st.sidebar.radio("Go to", pages)
 
 # Common UI elements
@@ -41,61 +39,32 @@ def calculate_result(score, total):
     """
     percentage = (score / total) * 100
     if percentage >= 80:
-        return "Green", "Pass"
+        return "Green", "Pass", "No follow-up needed"
     elif 50 <= percentage < 80:
-        return "Yellow", "Conditional"
+        return "Yellow", "Conditional", "Recommend review and partial corrections"
     else:
-        return "Red", "Fail"
+        return "Red", "Fail", "Immediate action required to address major issues"
 
-def save_to_excel(dataframes, sheet_names):
-    """
-    Save data to an Excel file in memory.
-    """
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        for df, sheet_name in zip(dataframes, sheet_names):
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
-    return output.getvalue()
+# Page: Introduction
+if selected_page == "Introduction":
+    st.title("🚗 ECU Software FCA & PCA Audit Form")
+    st.markdown("""
+    This form supports internal CM audits software during development and release. 
+    It follows configuration management standards such as ISO 10007, EIA-649C, and IEEE 828.
 
-def save_to_pdf(fca_df, pca_df, summary, overall_status):
-    """
-    Save data to a PDF file in memory.
-    """
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
+    ### Functional Configuration Audit (FCA)
+    Verifies the specified software meets approved functional and performance requirements through traceability, 
+    test results, and adherence to development processes.
 
-    pdf.cell(200, 10, txt="ECU Software FCA & PCA Audit Report", ln=True, align='C')
-    pdf.ln(10)
-
-    # FCA Section
-    pdf.cell(200, 10, txt="Functional Configuration Audit (FCA)", ln=True, align='L')
-    for index, row in fca_df.iterrows():
-        pdf.cell(0, 10, txt=f"{row['Question']}: {row['Rating']} | {row['Comment']}", ln=True)
-
-    pdf.ln(10)
-
-    # PCA Section
-    pdf.cell(200, 10, txt="Physical Configuration Audit (PCA)", ln=True, align='L')
-    for index, row in pca_df.iterrows():
-        pdf.cell(0, 10, txt=f"{row['Question']}: {row['Rating']} | {row['Comment']}", ln=True)
-
-    pdf.ln(10)
-
-    # Summary Section
-    pdf.cell(200, 10, txt="Audit Summary", ln=True, align='L')
-    pdf.cell(0, 10, txt=f"Overall Status: {overall_status}", ln=True)
-    pdf.cell(0, 10, txt=summary, ln=True)
-
-    output = BytesIO()
-    pdf.output(output)
-    return output.getvalue()
+    ### Physical Configuration Audit (PCA)
+    Confirms the released software and its documentation match the approved baseline, including version control, 
+    approved changes, and license compliance.
+    """)
 
 # Page: Project Details
-if selected_page == "Project Details":
-    st.title("🚗 ECU Software FCA & PCA Audit Form")
-    st.markdown("### Project Details")
+elif selected_page == "Project Details":
+    st.title("Project Details")
+    st.markdown("### Provide the details of the project being audited.")
     project_name = st.text_input("Project Name")
     audit_date = st.date_input("Audit Date")
     auditor = st.text_input("Auditor(s)")
@@ -128,7 +97,7 @@ elif selected_page == "Physical Configuration Audit (PCA)":
 elif selected_page == "Audit Summary":
     st.title("Audit Summary")
     st.markdown("### 📝 Summary of Audit Findings")
-    overall_status = st.selectbox("Overall Audit Status", ["Pass", "Conditional", "Fail"])
+    overall_status = st.selectbox("Overall Audit Status (Optional)", ["Pass", "Conditional", "Fail"])
     summary = st.text_area("Summary of Issues and Actions")
 
     if st.button("Generate Report"):
@@ -140,7 +109,7 @@ elif selected_page == "Audit Summary":
         fca_score = fca_df["Weight"].sum() if not fca_df.empty else 0
         pca_score = pca_df["Weight"].sum() if not pca_df.empty else 0
         total_score = len(fca_df) * 2 + len(pca_df) * 2
-        color, recommendation = calculate_result(fca_score + pca_score, total_score)
+        color, recommendation, follow_up = calculate_result(fca_score + pca_score, total_score)
 
         # Display FCA and PCA responses
         if not fca_df.empty:
@@ -154,12 +123,32 @@ elif selected_page == "Audit Summary":
         st.markdown("#### Summary")
         st.write(f"**Overall Status:** {recommendation}")
         st.write(f"**Color Indicator:** {color}")
+        st.write(f"**Follow-up Recommendations:** {follow_up}")
         st.write(summary)
 
         # Export Options
         st.markdown("### Export Options")
-        excel_data = save_to_excel([fca_df, pca_df], ["FCA", "PCA"])
-        st.download_button("Download Excel", data=excel_data, file_name="Audit_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        fca_json = fca_df.to_json(orient="records")
+        pca_json = pca_df.to_json(orient="records")
 
-        pdf_data = save_to_pdf(fca_df, pca_df, summary, recommendation)
-        st.download_button("Download PDF", data=pdf_data, file_name="Audit_Report.pdf", mime="application/pdf")
+        st.download_button(
+            label="Download FCA as JSON",
+            data=fca_json,
+            file_name="FCA_Responses.json",
+            mime="application/json"
+        )
+
+        st.download_button(
+            label="Download PCA as JSON",
+            data=pca_json,
+            file_name="PCA_Responses.json",
+            mime="application/json"
+        )
+
+        combined_csv = fca_df.append(pca_df).to_csv(index=False)
+        st.download_button(
+            label="Download Combined Report as CSV",
+            data=combined_csv,
+            file_name="Audit_Report.csv",
+            mime="text/csv"
+        )
