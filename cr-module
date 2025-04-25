@@ -1,0 +1,112 @@
+from enum import Enum
+
+class Status(Enum):
+    OPEN = "Open"
+    CLOSED = "Closed"
+    APPROVED = "Approved"
+    PENDING = "Pending"
+    COMPLETED = "Completed"
+
+class ChangeIssue:
+    def __init__(self, title):
+        self.title = title
+        self.status = Status.OPEN
+        print(f"Issue initialized: {self.title}")
+
+    def analyze(self):
+        print("Analyzing issue...")
+
+    def dispose(self):
+        print("Disposing issue...")
+
+    def close(self):
+        print("Closing issue.")
+        self.status = Status.CLOSED
+
+class ChangeRequest:
+    def __init__(self, issue):
+        self.issue = issue
+        self.status = Status.OPEN
+        print("Change Request initialized.")
+
+    def analyze_impacts(self):
+        print("Analyzing CR impacts...")
+
+    def refine_functional_level(self):
+        print("Refining IA to functional level...")
+
+    def approve_by_stakeholders(self):
+        print("Stakeholder approved.")
+        self.status = Status.APPROVED
+
+    def close(self):
+        print("Closing Change Request.")
+        self.status = Status.CLOSED
+        self.issue.close()
+
+class ChangeOrder:
+    def __init__(self, change_request):
+        self.cr = change_request
+        self.status = Status.OPEN
+        self.actions = []
+        print("Change Order initialized.")
+
+    def assign_actions(self, action_descriptions):
+        self.actions = [ChangeAction(desc, self) for desc in action_descriptions]
+        print(f"Assigned actions: {action_descriptions}")
+
+    def check_all_actions_closed(self):
+        return all(action.status == Status.APPROVED for action in self.actions)
+
+    def complete_and_close(self):
+        if self.check_all_actions_closed():
+            print("All CAs approved. Closing Change Order.")
+            self.status = Status.CLOSED
+            self.cr.close()
+        else:
+            print("Not all CAs are approved yet.")
+
+class ChangeAction:
+    def __init__(self, description, change_order):
+        self.description = description
+        self.status = Status.PENDING
+        self.change_order = change_order
+        print(f"Initialized CA: {description}")
+
+    def implement(self):
+        print(f"Implementing: {self.description}")
+        self.status = Status.COMPLETED
+
+    def validate(self):
+        print(f"Validating: {self.description}")
+
+    def approve(self):
+        print(f"Approving: {self.description}")
+        self.status = Status.APPROVED
+
+        # Check if all actions are approved and close CO if so
+        if self.change_order.check_all_actions_closed():
+            self.change_order.complete_and_close()
+
+# === Workflow Simulation ===
+
+# 1. Change Identification / Initialization
+issue = ChangeIssue("Upgrade obsolete connector")
+issue.analyze()
+issue.dispose()
+
+# Fork A: Proceed to CR
+cr = ChangeRequest(issue)
+cr.analyze_impacts()
+cr.refine_functional_level()
+cr.approve_by_stakeholders()
+
+# Fork B: Proceed to CO
+co = ChangeOrder(cr)
+co.assign_actions(["Update connector specs", "Revise BOM", "Change documentation"])
+
+# Downstream to CA
+for action in co.actions:
+    action.implement()
+    action.validate()
+    action.approve()  # Triggers CO → CR → Issue closure
