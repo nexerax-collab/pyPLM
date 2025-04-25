@@ -1,293 +1,457 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
-import time
-import json
-from typing import Dict, List, Optional
-import uuid
-
-# Initialize page config first
-st.set_page_config(
-    page_title="PyPLM - Product Lifecycle Management",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Constants
-CURRENT_UTC = "2025-04-25 10:02:34"
-CURRENT_USER = "nexerax-collab"
-
-# PLM Module Types
-MODULE_TYPES = [
-    "Software Component",
-    "Documentation",
-    "Configuration",
-    "API",
-    "Test Suite",
-    "Infrastructure",
-    "Security",
-    "UI Component",
-    "Database",
-    "Other"
-]
-
-# Change Types
-CHANGE_TYPES = [
-    "Feature Request",
-    "Bug Fix",
-    "Enhancement",
-    "Documentation",
-    "Refactoring",
-    "Security Fix",
-    "Performance Improvement",
-    "Other"
-]
-
-# Risk Areas
-RISK_AREAS = {
-    "Performance Impact": 3,
-    "Security Impact": 4,
-    "Data Impact": 3,
-    "UI Impact": 2,
-    "API Impact": 3,
-    "Documentation Impact": 1,
-    "Testing Impact": 2
-}
-
-class PLMState:
-    """Manages PLM application state"""
-    def __init__(self):
-        if 'plm_state' not in st.session_state:
-            st.session_state.plm_state = {
-                'login': CURRENT_USER,
-                'session_id': f"SESSION_{int(time.time())}",
-                'start_time': CURRENT_UTC,
-                'intro_step': 0,
-                'completed_steps': set(),
-                'changes': [],
-                'modules': [],
-                'current_page': 'intro'
-            }
+def show_module_creation():
+    """Show module creation form and handling"""
+    st.markdown("### Create New Module")
     
-    def get_state(self) -> dict:
-        return st.session_state.plm_state
-    
-    def update_state(self, key: str, value: any):
-        st.session_state.plm_state[key] = value
-    
-    def add_module(self, module: dict):
-        if 'modules' not in st.session_state.plm_state:
-            st.session_state.plm_state['modules'] = []
-        st.session_state.plm_state['modules'].append(module)
-    
-    def add_change(self, change: dict):
-        if 'changes' not in st.session_state.plm_state:
-            st.session_state.plm_state['changes'] = []
-        st.session_state.plm_state['changes'].append(change)
-    
-    def get_modules(self) -> List[dict]:
-        return st.session_state.plm_state.get('modules', [])
-    
-    def get_changes(self) -> List[dict]:
-        return st.session_state.plm_state.get('changes', [])
-
-class PLMNavigation:
-    """Handles navigation and page rendering"""
-    def __init__(self, state: PLMState):
-        self.state = state
-        self.pages = {
-            'intro': self.render_intro_page,
-            'modules': self.render_modules_page,
-            'changes': self.render_changes_page,
-            'analytics': self.render_analytics_page
-        }
-    
-    def render_header(self):
-        st.markdown(f"""
-            <div style='background-color: #f0f2f6; padding: 1em; border-radius: 5px; margin-bottom: 1em;'>
-                <h1 style='margin:0'>PyPLM</h1>
-                <p style='color: #666;'>Product Lifecycle Management</p>
-                <small style='font-family: monospace;'>
-                    🕒 {CURRENT_UTC} UTC • 👤 {CURRENT_USER}
-                </small>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    def render_navigation(self):
-        st.sidebar.title("Navigation")
-        current_page = st.sidebar.radio(
-            "Go to",
-            ['intro', 'modules', 'changes', 'analytics'],
-            format_func=lambda x: x.capitalize()
+    with st.form("module_creation_form"):
+        module_name = st.text_input(
+            "Module Name",
+            placeholder="e.g., authentication-service"
         )
-        self.state.update_state('current_page', current_page)
-    
-    def render_intro_page(self):
-        st.title("Welcome to PyPLM")
-        st.markdown("""
-        ### Modern Software PLM
         
-        Product Lifecycle Management (PLM) and Configuration Management (CM) are essential 
-        for managing complex software projects effectively.
-        
-        This tool helps you:
-        - Track software components and their relationships
-        - Manage changes and their impacts
-        - Monitor project progress and health
-        - Ensure compliance and quality
-        """)
-        
-        st.markdown("### Quick Start")
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("📦 Create New Module"):
-                self.state.update_state('current_page', 'modules')
-                st.rerun()
-                
+            module_type = st.selectbox(
+                "Module Type",
+                [
+                    "🌐 Microservice",
+                    "📚 Library",
+                    "🧩 Plugin",
+                    "🔧 Utility",
+                    "🎨 UI Component",
+                    "🗄️ Data Service",
+                    "🔒 Security Module",
+                    "📡 API Gateway",
+                    "⚙️ Infrastructure",
+                    "📊 Analytics Module"
+                ]
+            )
+            
+            version = st.text_input(
+                "Initial Version",
+                placeholder="e.g., 1.0.0",
+                value="0.1.0"
+            )
+        
         with col2:
-            if st.button("🔄 Submit Change"):
-                self.state.update_state('current_page', 'changes')
-                st.rerun()
+            status = st.selectbox(
+                "Status",
+                ["Planning", "Development", "Testing", "Production", "Maintenance"]
+            )
+            
+            priority = st.select_slider(
+                "Priority",
+                ["Low", "Medium", "High", "Critical"],
+                value="Medium"
+            )
+        
+        description = st.text_area(
+            "Description",
+            placeholder="Describe the purpose and functionality of this module"
+        )
+        
+        dependencies = st.multiselect(
+            "Dependencies",
+            ["None"] + [m.get('name', '') for m in st.session_state.get('modules', [])]
+        )
+        
+        col3, col4 = st.columns(2)
+        with col3:
+            owner = st.text_input(
+                "Module Owner",
+                value=CURRENT_USER
+            )
+        with col4:
+            team = st.text_input(
+                "Team",
+                placeholder="e.g., Backend Team"
+            )
+        
+        submit_button = st.form_submit_button("Create Module")
+        
+        if submit_button and module_name:
+            new_module = {
+                'id': str(uuid.uuid4()),
+                'name': module_name,
+                'type': module_type,
+                'version': version,
+                'status': status,
+                'priority': priority,
+                'description': description,
+                'dependencies': dependencies if dependencies != ["None"] else [],
+                'owner': owner,
+                'team': team,
+                'created_at': CURRENT_UTC,
+                'created_by': CURRENT_USER,
+                'last_updated': CURRENT_UTC
+            }
+            
+            if 'modules' not in st.session_state:
+                st.session_state.modules = []
+            
+            st.session_state.modules.append(new_module)
+            st.success(f"Module '{module_name}' created successfully!")
+            return True
     
-    def render_modules_page(self):
-        st.title("Module Management")
-        
-        # Add new module form
-        with st.expander("➕ Add New Module", expanded=True):
-            with st.form("new_module_form"):
-                module_name = st.text_input("Module Name")
-                module_type = st.selectbox("Module Type", MODULE_TYPES)
-                description = st.text_area("Description")
-                dependencies = st.multiselect(
-                    "Dependencies",
-                    [m['name'] for m in self.state.get_modules()]
-                )
+    return False
+
+def show_module_browser():
+    """Show module browsing interface"""
+    st.markdown("### Browse Modules")
+    
+    # Filtering options
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        type_filter = st.multiselect(
+            "Filter by Type",
+            list(set(m.get('type', '') for m in st.session_state.get('modules', [])))
+        )
+    with col2:
+        status_filter = st.multiselect(
+            "Filter by Status",
+            ["Planning", "Development", "Testing", "Production", "Maintenance"]
+        )
+    with col3:
+        search = st.text_input("Search Modules", placeholder="Enter keywords...")
+    
+    # Get filtered modules
+    modules = st.session_state.get('modules', [])
+    if type_filter:
+        modules = [m for m in modules if m.get('type', '') in type_filter]
+    if status_filter:
+        modules = [m for m in modules if m.get('status', '') in status_filter]
+    if search:
+        search_lower = search.lower()
+        modules = [m for m in modules if (
+            search_lower in m.get('name', '').lower() or
+            search_lower in m.get('description', '').lower()
+        )]
+    
+    # Display modules
+    if not modules:
+        st.info("No modules found. Create your first module using the form above.")
+    else:
+        for module in modules:
+            with st.expander(f"📦 {module['name']} - {module['type']}"):
+                col1, col2 = st.columns([2,1])
                 
-                if st.form_submit_button("Add Module"):
-                    if module_name and module_type:
-                        new_module = {
-                            'id': str(uuid.uuid4()),
-                            'name': module_name,
-                            'type': module_type,
-                            'description': description,
-                            'dependencies': dependencies,
-                            'created_at': CURRENT_UTC,
-                            'created_by': CURRENT_USER,
-                            'status': 'Active'
-                        }
-                        self.state.add_module(new_module)
-                        st.success(f"Module '{module_name}' added successfully!")
-        
-        # Display existing modules
-        st.markdown("### Existing Modules")
-        modules = self.state.get_modules()
-        if not modules:
-            st.info("No modules created yet. Use the form above to add your first module.")
-        else:
-            for module in modules:
-                with st.expander(f"📦 {module['name']} ({module['type']})"):
+                with col1:
                     st.markdown(f"**Description:** {module['description']}")
+                    st.markdown(f"**Version:** {module['version']}")
                     st.markdown(f"**Dependencies:** {', '.join(module['dependencies']) if module['dependencies'] else 'None'}")
-                    st.markdown(f"**Created:** {module['created_at']} by {module['created_by']}")
-    
-    def render_changes_page(self):
-        st.title("Change Management")
-        
-        # Add new change form
-        with st.expander("➕ Submit New Change", expanded=True):
-            with st.form("new_change_form"):
-                change_title = st.text_input("Change Title")
-                change_type = st.selectbox("Change Type", CHANGE_TYPES)
-                affected_modules = st.multiselect(
-                    "Affected Modules",
-                    [m['name'] for m in self.state.get_modules()]
-                )
-                description = st.text_area("Description")
-                risk_areas = st.multiselect(
-                    "Risk Areas",
-                    list(RISK_AREAS.keys())
-                )
                 
-                if st.form_submit_button("Submit Change"):
-                    if change_title and change_type:
-                        risk_score = sum(RISK_AREAS[risk] for risk in risk_areas)
-                        new_change = {
-                            'id': str(uuid.uuid4()),
-                            'title': change_title,
-                            'type': change_type,
-                            'description': description,
-                            'affected_modules': affected_modules,
-                            'risk_areas': risk_areas,
-                            'risk_score': risk_score,
-                            'status': 'Pending',
-                            'created_at': CURRENT_UTC,
-                            'created_by': CURRENT_USER
-                        }
-                        self.state.add_change(new_change)
-                        st.success(f"Change '{change_title}' submitted successfully!")
+                with col2:
+                    st.markdown(f"**Status:** {module['status']}")
+                    st.markdown(f"**Priority:** {module['priority']}")
+                    st.markdown(f"**Owner:** {module['owner']}")
+                    st.markdown(f"**Team:** {module['team']}")
+                
+                st.markdown(f"**Created:** {module['created_at']} by {module['created_by']}")
+                st.markdown(f"**Last Updated:** {module['last_updated']}")
+
+def show_module_learning():
+    """Show module management learning resources"""
+    st.markdown("### Learn about Module Management")
+    
+    with st.expander("📚 What is a Module?"):
+        st.markdown("""
+        In software PLM, a module is a self-contained unit of software that serves a specific purpose.
+        It could be:
+        - A microservice
+        - A library
+        - A plugin
+        - A UI component
+        - An infrastructure component
         
-        # Display existing changes
-        st.markdown("### Change Requests")
-        changes = self.state.get_changes()
-        if not changes:
-            st.info("No changes submitted yet. Use the form above to submit your first change request.")
-        else:
-            for change in changes:
-                with st.expander(f"🔄 {change['title']} ({change['type']})"):
+        Good modules are:
+        - Well-defined in scope
+        - Loosely coupled
+        - Highly cohesive
+        - Properly documented
+        - Version controlled
+        """)
+    
+    with st.expander("🔍 Module Best Practices"):
+        st.markdown("""
+        1. **Naming Conventions**
+           - Use clear, descriptive names
+           - Follow team/organization standards
+           - Include version information
+        
+        2. **Documentation**
+           - Clear purpose and functionality
+           - Setup and usage instructions
+           - Dependencies and requirements
+           - API documentation if applicable
+        
+        3. **Version Control**
+           - Use semantic versioning
+           - Maintain a changelog
+           - Tag releases properly
+        
+        4. **Dependencies**
+           - Minimize external dependencies
+           - Use dependency management
+           - Keep dependencies updated
+        
+        5. **Testing**
+           - Unit tests
+           - Integration tests
+           - Performance tests
+           - Security tests
+        """)
+    
+    with st.expander("📊 Module Metrics"):
+        st.markdown("""
+        Key metrics to track:
+        1. **Quality Metrics**
+           - Code coverage
+           - Technical debt
+           - Complexity
+        
+        2. **Performance Metrics**
+           - Response time
+           - Resource usage
+           - Error rates
+        
+        3. **Development Metrics**
+           - Change frequency
+           - Lead time
+           - MTTR (Mean Time To Recovery)
+        """)
+
+def show_change_submission():
+    """Show change submission form"""
+    st.markdown("### Submit New Change")
+    
+    with st.form("change_submission_form"):
+        title = st.text_input(
+            "Change Title",
+            placeholder="Brief description of the change"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            change_type = st.selectbox(
+                "Change Type",
+                [
+                    "Feature Request",
+                    "Bug Fix",
+                    "Enhancement",
+                    "Documentation",
+                    "Refactoring",
+                    "Security Fix",
+                    "Performance Improvement",
+                    "Dependency Update",
+                    "Configuration Change",
+                    "Other"
+                ]
+            )
+            
+            priority = st.select_slider(
+                "Priority",
+                ["Low", "Medium", "High", "Critical"],
+                value="Medium"
+            )
+        
+        with col2:
+            affected_modules = st.multiselect(
+                "Affected Modules",
+                [m.get('name', '') for m in st.session_state.get('modules', [])]
+            )
+            
+            risk_areas = st.multiselect(
+                "Risk Areas",
+                list(RISK_AREAS.keys())
+            )
+        
+        description = st.text_area(
+            "Detailed Description",
+            placeholder="Provide detailed information about the change"
+        )
+        
+        impact_analysis = st.text_area(
+            "Impact Analysis",
+            placeholder="Describe potential impacts on system, performance, security, etc."
+        )
+        
+        testing_requirements = st.text_area(
+            "Testing Requirements",
+            placeholder="Specify testing needs for this change"
+        )
+        
+        submit_button = st.form_submit_button("Submit Change")
+        
+        if submit_button and title and description:
+            risk_score = sum(RISK_AREAS[risk] for risk in risk_areas)
+            
+            new_change = {
+                'id': str(uuid.uuid4()),
+                'title': title,
+                'type': change_type,
+                'priority': priority,
+                'affected_modules': affected_modules,
+                'risk_areas': risk_areas,
+                'risk_score': risk_score,
+                'description': description,
+                'impact_analysis': impact_analysis,
+                'testing_requirements': testing_requirements,
+                'status': 'Pending Review',
+                'created_at': CURRENT_UTC,
+                'created_by': CURRENT_USER,
+                'last_updated': CURRENT_UTC
+            }
+            
+            if 'changes' not in st.session_state:
+                st.session_state.changes = []
+            
+            st.session_state.changes.append(new_change)
+            st.success(f"Change request '{title}' submitted successfully!")
+            return True
+    
+    return False
+
+def show_change_review():
+    """Show change review interface"""
+    st.markdown("### Review Changes")
+    
+    # Filtering options
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        type_filter = st.multiselect(
+            "Filter by Type",
+            list(set(c.get('type', '') for c in st.session_state.get('changes', [])))
+        )
+    with col2:
+        status_filter = st.multiselect(
+            "Filter by Status",
+            ["Pending Review", "In Review", "Approved", "Rejected", "Implemented"]
+        )
+    with col3:
+        search = st.text_input("Search Changes", placeholder="Enter keywords...")
+    
+    # Get filtered changes
+    changes = st.session_state.get('changes', [])
+    if type_filter:
+        changes = [c for c in changes if c.get('type', '') in type_filter]
+    if status_filter:
+        changes = [c for c in changes if c.get('status', '') in status_filter]
+    if search:
+        search_lower = search.lower()
+        changes = [c for c in changes if (
+            search_lower in c.get('title', '').lower() or
+            search_lower in c.get('description', '').lower()
+        )]
+    
+    # Display changes
+    if not changes:
+        st.info("No changes found. Submit a new change using the form above.")
+    else:
+        for change in changes:
+            with st.expander(f"🔄 {change['title']} ({change['type']})"):
+                col1, col2 = st.columns([2,1])
+                
+                with col1:
                     st.markdown(f"**Description:** {change['description']}")
                     st.markdown(f"**Affected Modules:** {', '.join(change['affected_modules'])}")
-                    st.markdown(f"**Risk Score:** {change['risk_score']}")
+                    st.markdown(f"**Impact Analysis:** {change['impact_analysis']}")
+                    st.markdown(f"**Testing Requirements:** {change['testing_requirements']}")
+                
+                with col2:
                     st.markdown(f"**Status:** {change['status']}")
-                    st.markdown(f"**Created:** {change['created_at']} by {change['created_by']}")
-    
-    def render_analytics_page(self):
-        st.title("Analytics & Insights")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("### Module Statistics")
-            modules = self.state.get_modules()
-            if modules:
-                module_types = pd.DataFrame([{'type': m['type']} for m in modules])
-                st.bar_chart(module_types['type'].value_counts())
-            else:
-                st.info("No modules data available")
-        
-        with col2:
-            st.markdown("### Change Statistics")
-            changes = self.state.get_changes()
-            if changes:
-                change_types = pd.DataFrame([{'type': c['type']} for c in changes])
-                st.bar_chart(change_types['type'].value_counts())
-            else:
-                st.info("No changes data available")
-        
-        # Risk Analysis
-        st.markdown("### Risk Analysis")
-        if changes:
-            risk_data = pd.DataFrame(changes)
-            avg_risk = risk_data['risk_score'].mean()
-            st.metric("Average Risk Score", f"{avg_risk:.2f}")
-            
-            high_risk_changes = risk_data[risk_data['risk_score'] > 7]
-            st.warning(f"Number of high-risk changes: {len(high_risk_changes)}")
-        else:
-            st.info("No risk data available")
-    
-    def render(self):
-        self.render_header()
-        self.render_navigation()
-        
-        current_page = self.state.get_state()['current_page']
-        self.pages[current_page]()
+                    st.markdown(f"**Priority:** {change['priority']}")
+                    st.markdown(f"**Risk Score:** {change['risk_score']}")
+                    st.markdown(f"**Risk Areas:** {', '.join(change['risk_areas'])}")
+                
+                st.markdown(f"**Created:** {change['created_at']} by {change['created_by']}")
+                st.markdown(f"**Last Updated:** {change['last_updated']}")
+                
+                # Add review actions if pending
+                if change['status'] == 'Pending Review':
+                    col3, col4, col5 = st.columns(3)
+                    with col3:
+                        if st.button("✅ Approve", key=f"approve_{change['id']}"):
+                            change['status'] = 'Approved'
+                            change['last_updated'] = CURRENT_UTC
+                            st.rerun()
+                    with col4:
+                        if st.button("❌ Reject", key=f"reject_{change['id']}"):
+                            change['status'] = 'Rejected'
+                            change['last_updated'] = CURRENT_UTC
+                            st.rerun()
+                    with col5:
+                        if st.button("📝 Request Changes", key=f"request_{change['id']}"):
+                            change['status'] = 'In Review'
+                            change['last_updated'] = CURRENT_UTC
+                            st.rerun()
 
-def main():
-    """Main application entry point"""
-    state = PLMState()
-    navigation = PLMNavigation(state)
-    navigation.render()
-
-if __name__ == "__main__":
-    main()
+def show_change_learning():
+    """Show change management learning resources"""
+    st.markdown("### Learn about Change Management")
+    
+    with st.expander("📚 Understanding Change Management"):
+        st.markdown("""
+        Change management in software development ensures that:
+        - Changes are properly tracked
+        - Risks are assessed
+        - Impact is understood
+        - Proper approvals are obtained
+        - Implementation is controlled
+        
+        Good change management leads to:
+        - Reduced risks
+        - Better quality
+        - Traceable modifications
+        - Coordinated updates
+        """)
+    
+    with st.expander("🔍 Change Management Best Practices"):
+        st.markdown("""
+        1. **Change Request Process**
+           - Clear description
+           - Impact analysis
+           - Risk assessment
+           - Testing requirements
+        
+        2. **Review and Approval**
+           - Proper stakeholder review
+           - Technical assessment
+           - Risk evaluation
+           - Documentation review
+        
+        3. **Implementation**
+           - Controlled deployment
+           - Proper testing
+           - Rollback plans
+           - Monitoring
+        
+        4. **Documentation**
+           - Change records
+           - Implementation details
+           - Test results
+           - Sign-offs
+        """)
+    
+    with st.expander("⚖️ Risk Assessment"):
+        st.markdown("""
+        Consider these factors when assessing change risks:
+        
+        1. **Impact Areas**
+           - Performance
+           - Security
+           - Data integrity
+           - User experience
+           - System stability
+        
+        2. **Risk Levels**
+           - Critical: System-wide impact
+           - High: Major feature impact
+           - Medium: Limited feature impact
+           - Low: Minimal impact
+        
+        3. **Mitigation Strategies**
+           - Proper testing
+           - Phased rollout
+           - Monitoring
+           - Rollback procedures
+        """)
