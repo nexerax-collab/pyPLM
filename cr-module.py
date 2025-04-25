@@ -3,7 +3,6 @@ import json
 import os
 from enum import Enum
 from datetime import datetime
-import pytz
 
 # === Constants and Enums ===
 class Status(Enum):
@@ -20,22 +19,25 @@ class Role(Enum):
 
 # === Session State Management ===
 def init_session_state():
+    # Initialize basic session state variables
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
-    if "user" not in st.session_state:
-        st.session_state.user = "nexerax-collab"
-    if "current_time" not in st.session_state:
-        st.session_state.current_time = "2025-04-25 13:00:05"
+    if "role" not in st.session_state:
+        st.session_state.role = None
 
+# === Role Selection Callbacks ===
+def set_role(role):
+    st.session_state.authenticated = True
+    st.session_state.role = role
+    
 # === Authentication Page ===
 def show_auth_page():
     st.title("🔐 Role Selection & Authentication")
     
     # Display current user and time
-    st.info(f"Current User: {st.session_state.user}")
-    st.info(f"Current Time (UTC): {st.session_state.current_time}")
+    st.info(f"Current User: nexerax-collab")
+    st.info(f"Current Time (UTC): 2025-04-25 13:03:11")
     
-    # Role selection
     st.header("Select Your Role")
     
     role_descriptions = {
@@ -62,30 +64,30 @@ def show_auth_page():
     # Create three columns for role selection
     col1, col2, col3 = st.columns(3)
     
-    # Display role cards
+    # Display role cards with callbacks
     with col1:
         st.markdown(role_descriptions[Role.INITIATOR.value])
-        if st.button("Select Initiator Role"):
-            st.session_state.role = Role.INITIATOR.value
-            st.session_state.authenticated = True
-            st.experimental_rerun()
+        st.button("Select Initiator Role", 
+                 key="init_role",
+                 on_click=set_role,
+                 args=(Role.INITIATOR.value,))
             
     with col2:
         st.markdown(role_descriptions[Role.COORDINATOR.value])
-        if st.button("Select Coordinator Role"):
-            st.session_state.role = Role.COORDINATOR.value
-            st.session_state.authenticated = True
-            st.experimental_rerun()
+        st.button("Select Coordinator Role",
+                 key="coord_role",
+                 on_click=set_role,
+                 args=(Role.COORDINATOR.value,))
             
     with col3:
         st.markdown(role_descriptions[Role.CONTRIBUTOR.value])
-        if st.button("Select Contributor Role"):
-            st.session_state.role = Role.CONTRIBUTOR.value
-            st.session_state.authenticated = True
-            st.experimental_rerun()
+        st.button("Select Contributor Role",
+                 key="contrib_role",
+                 on_click=set_role,
+                 args=(Role.CONTRIBUTOR.value,))
     
     # Show currently selected role if any
-    if "role" in st.session_state:
+    if st.session_state.role:
         st.success(f"Selected Role: {st.session_state.role}")
 
 # === Role-based Access Control ===
@@ -136,10 +138,10 @@ def main_app():
     with st.sidebar:
         st.header("Current Session")
         st.info(f"Role: {st.session_state.role}")
-        st.info(f"User: {st.session_state.user}")
-        if st.button("Change Role"):
+        st.info(f"User: nexerax-collab")
+        if st.button("Change Role", key="change_role"):
             st.session_state.authenticated = False
-            st.experimental_rerun()
+            st.session_state.role = None
     
     # === Phase 1: Issue Initialization ===
     @role_required(Role.INITIATOR)
@@ -151,13 +153,17 @@ def main_app():
             save_state()
         if st.session_state.get("issue"):
             st.write(f"Issue: {st.session_state.issue['title']} - Status: {st.session_state.issue['status']}")
-            if st.button("Analyze Issue", key="analyze_issue"):
-                st.info("Issue analyzed.")
-            if st.button("Issue Disposition", key="issue_disposition"):
-                st.success("Issue disposition complete.")
-            if st.button("Proceed to CR", key="proceed_cr"):
-                st.session_state.cr = {"status": Status.OPEN.name}
-                save_state()
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("Analyze Issue", key="analyze_issue"):
+                    st.info("Issue analyzed.")
+            with col2:
+                if st.button("Issue Disposition", key="issue_disposition"):
+                    st.success("Issue disposition complete.")
+            with col3:
+                if st.button("Proceed to CR", key="proceed_cr"):
+                    st.session_state.cr = {"status": Status.OPEN.name}
+                    save_state()
 
     # === Phase 2: Change Request ===
     @role_required(Role.COORDINATOR)
@@ -165,14 +171,18 @@ def main_app():
         st.header("2️⃣ Change Evaluation (CR)")
         if st.session_state.get("cr"):
             st.write(f"CR Status: {st.session_state.cr['status']}")
-            if st.button("Analyze CR Impacts", key="analyze_cr"):
-                st.info("Impacts analyzed.")
-            if st.button("Refine to Functional Level", key="refine_cr"):
-                st.info("Refinement complete.")
-            if st.button("Stakeholder Approval", key="approve_cr"):
-                st.session_state.cr['status'] = Status.APPROVED.name
-                st.session_state.co = {"status": Status.OPEN.name, "actions": []}
-                save_state()
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("Analyze CR Impacts", key="analyze_cr"):
+                    st.info("Impacts analyzed.")
+            with col2:
+                if st.button("Refine to Functional Level", key="refine_cr"):
+                    st.info("Refinement complete.")
+            with col3:
+                if st.button("Stakeholder Approval", key="approve_cr"):
+                    st.session_state.cr['status'] = Status.APPROVED.name
+                    st.session_state.co = {"status": Status.OPEN.name, "actions": []}
+                    save_state()
 
     # === Phase 3: Change Order ===
     @role_required(Role.COORDINATOR)
