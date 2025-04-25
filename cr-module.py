@@ -16,10 +16,11 @@ class Status(Enum):
 def role_required(*roles):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            if st.session_state.get("role") in roles:
+            current_role = st.session_state.get("role")
+            if current_role in roles:
                 return func(*args, **kwargs)
             else:
-                st.warning("Access denied for your role.")
+                st.warning(f"Access denied. Required role(s): {', '.join(roles)}. Current role: {current_role}")
         return wrapper
     return decorator
 
@@ -28,7 +29,6 @@ DATA_FILE = "change_data.json"
 
 def save_state():
     try:
-        # Convert session_state to dict, excluding streamlit's internal keys
         state_dict = {
             key: value for key, value in st.session_state.items()
             if not key.startswith('_')
@@ -52,16 +52,27 @@ def load_state():
 st.set_page_config(page_title="Change Management Workflow", layout="wide")
 st.title("🔧 Change Management Workflow")
 
+# === Role Selection - MOVED TO TOP AND IMPROVED ===
 roles = ["Change Initiator", "Change Coordinator/Manager", "Change Contributors"]
 
-# === Role Selection ===
+# Initialize role if not present
 if "role" not in st.session_state:
-    st.session_state.role = None
+    st.session_state["role"] = roles[0]  # Default to first role
 
-st.sidebar.header("User Role")
-st.session_state.role = st.sidebar.selectbox("Select your role:", roles)
-st.sidebar.success(f"Current role: {st.session_state.role}")
+# Role selection in sidebar
+with st.sidebar:
+    st.header("User Role")
+    selected_role = st.selectbox(
+        "Select your role:",
+        options=roles,
+        key="role_selector",
+        index=roles.index(st.session_state["role"])
+    )
+    # Update session state role
+    st.session_state["role"] = selected_role
+    st.success(f"Current role: {selected_role}")
 
+# Load saved state after role initialization
 load_state()
 
 # === Phase 1: Issue Initialization ===
@@ -148,6 +159,11 @@ with st.expander("📦 Final Status"):
         st.write(f"CO: {st.session_state.co['status']}")
         for a in st.session_state.co.get("actions", []):
             st.write(f"→ CA: {a['desc']} - {a['status']}")
+
+# Debug information
+with st.expander("🔍 Debug Information"):
+    st.write("Session State:", {k: v for k, v in st.session_state.items() if not k.startswith('_')})
+    st.write("Current Role:", st.session_state.get("role"))
 
 # Run role-specific phases
 phase_issue()
