@@ -138,7 +138,7 @@ elif st.session_state.page == "options":
         if st.button("Diese Option planen"):
             st.session_state.page = "plan"
             st.session_state.plan = {"months_p1": 6, "months_p2": 6, "mode": "basic"}
-            st.experimental_rerun()
+            st.rerun() # Dies ist die korrigierte Zeile
 
     # ---- Option 2: Längste Bezugsdauer ----
     with col2:
