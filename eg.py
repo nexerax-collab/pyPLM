@@ -112,7 +112,7 @@ if st.session_state.page == "start":
         submitted = st.form_submit_button("Optionen anzeigen")
         if submitted:
             st.session_state.page = "options"
-            st.experimental_rerun()
+            st.rerun()  # Die korrekte Funktion
 
 # --- Schritt 2: Optionen vergleichen ---
 elif st.session_state.page == "options":
